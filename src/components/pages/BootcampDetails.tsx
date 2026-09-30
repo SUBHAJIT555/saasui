@@ -1,0 +1,140 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useNavigate, useParams } from "@/lib/react-router";
+import BootcampDetailHero from "@/components/features/bootcamp/BootcampDetailHero";
+import BootcampEnrollmentModal from "@/components/modals/BootcampEnrollmentModal";
+import BootcampModuleChart from "@/components/features/bootcamp/BootcampModuleChart";
+import BootcampDeepDive from "@/components/features/bootcamp/BootcampDeepDive";
+import BootcampProgramTeaches from "@/components/features/bootcamp/BootcampProgramTeaches";
+import BootcampLaymanStory from "@/components/features/bootcamp/BootcampLaymanStory";
+import BootcampCareerOpportunity from "@/components/features/bootcamp/BootcampCareerOpportunity";
+import BootcampWhatsNew from "@/components/features/bootcamp/BootcampWhatsNew";
+import CallbackModal from "@/components/modals/CallbackModal";
+import { CandyButton } from "@/components/ui/candy-button";
+import FloatingBackButton from "@/components/ui/FloatingBackButton";
+import Portal from "@/components/ui/Portal";
+import { useBootcamps } from "@/hooks/useBootcamps";
+import { useFloatingBottomBar } from "@/providers/FloatingBottomBarContext";
+import { useFooterVisibility } from "@/hooks/useFooterVisibility";
+import { useLenis } from "@/hooks/useLenis";
+
+const sectionDivider = (
+  <div
+    className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 border-t border-dashed border-zinc-200"
+    aria-hidden
+  />
+);
+
+const BootcampDetails = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const lenis = useLenis();
+  const { getBootcampBySlug } = useBootcamps();
+  const bootcamp = getBootcampBySlug(slug as string);
+
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
+  const [showBackButton, setShowBackButton] = useState(false);
+  const [isCallbackModalOpen, setIsCallbackModalOpen] = useState(false);
+  const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
+  const isFooterVisible = useFooterVisibility();
+  const { setIsActive: setFloatingBottomBarActive } = useFloatingBottomBar();
+
+  useEffect(() => {
+    if (!bootcamp) {
+      navigate("/cyber-defense-programs#elite-bootcamps", { replace: true });
+    }
+  }, [bootcamp, navigate]);
+
+  useEffect(() => {
+    if (!lenis) {
+      setShowBackButton(false);
+      setShowFloatingButton(false);
+      return;
+    }
+
+    const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 800;
+    const scrollThreshold = viewportHeight;
+
+    const handleScroll = ({ scroll }: { scroll: number }) => {
+      const show = scroll > scrollThreshold && !isFooterVisible;
+      setShowBackButton(show);
+      setShowFloatingButton(show);
+    };
+
+    handleScroll({ scroll: lenis.scroll || 0 });
+    lenis.on("scroll", handleScroll);
+    return () => lenis.off("scroll", handleScroll);
+  }, [lenis, isFooterVisible]);
+
+  useEffect(() => {
+    setFloatingBottomBarActive(showFloatingButton);
+    return () => setFloatingBottomBarActive(false);
+  }, [showFloatingButton, setFloatingBottomBarActive]);
+
+  if (!bootcamp) return null;
+
+  return (
+    <>
+      <div className="relative z-10">
+        <BootcampDetailHero onEnroll={() => setIsEnrollmentModalOpen(true)} />
+        <BootcampModuleChart />
+        {sectionDivider}
+        <BootcampDeepDive />
+        <BootcampProgramTeaches />      
+        <BootcampLaymanStory />
+        <BootcampCareerOpportunity />
+        <BootcampWhatsNew />
+
+        <Portal>
+          <AnimatePresence>
+            {showFloatingButton && (
+              <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 100, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed bottom-4 left-1/2 z-9999 flex w-[calc(100%-2rem)] max-w-[95vw] -translate-x-1/2 transform flex-row items-center gap-3 rounded-xl border border-zinc-200 bg-white/90 p-2 shadow-lg backdrop-blur-sm sm:bottom-6 sm:w-auto sm:min-w-[400px] sm:max-w-[600px]"
+              >
+                <CandyButton
+                  type="button"
+                  onClick={() => setIsEnrollmentModalOpen(true)}
+                  className="min-w-0 flex-1 rounded-lg! border-zinc-800 bg-[radial-gradient(95%_60%_at_50%_75%,#18181b_0%,#27272a_100%)] px-4 py-2.5 font-montserrat! text-xs font-semibold whitespace-nowrap sm:text-sm"
+                >
+                  Enroll Now
+                </CandyButton>
+                <CandyButton
+                  type="button"
+                  onClick={() => setIsCallbackModalOpen(true)}
+                  className="min-w-0 flex-1 rounded-lg! border-zinc-400 bg-[radial-gradient(95%_60%_at_50%_75%,#52525b_0%,#71717a_100%)] px-4 py-2.5 font-inter-display! text-xs font-medium whitespace-nowrap sm:text-sm"
+                >
+                  Request Callback
+                </CandyButton>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <FloatingBackButton
+            isVisible={showBackButton}
+            onClick={() => navigate(-1)}
+          />
+        </Portal>
+
+        <CallbackModal
+          isOpen={isCallbackModalOpen}
+          onClose={() => setIsCallbackModalOpen(false)}
+          bootcampSlug={bootcamp.slug}
+        />
+
+        <BootcampEnrollmentModal
+          isOpen={isEnrollmentModalOpen}
+          onClose={() => setIsEnrollmentModalOpen(false)}
+          slug={bootcamp.slug}
+        />
+      </div>
+    </>
+  );
+};
+
+export default BootcampDetails;
