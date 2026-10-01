@@ -177,8 +177,8 @@ function PricingCard({ service, index }: { service: PricedService; index: number
   const ServiceIcon = serviceIcons[service.slug] ?? Lightbulb;
 
   return (
-    <article className="group relative flex h-full flex-col rounded-md border border-hairline bg-linear-to-b from-canvas to-brand-accent/5 p-5 transition-all duration-200  hover:shadow-[0_28px_56px_-34px_rgba(38,103,255,0.45)] sm:p-6">
-      <div className="flex items-center justify-between gap-3">
+    <article className="group relative flex h-full flex-col rounded-md border border-hairline bg-linear-to-b from-canvas to-brand-accent/5 p-2 transition-all duration-200  hover:shadow-[0_28px_56px_-34px_rgba(38,103,255,0.45)] sm:p-3">
+      {/* <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-accent/10 text-caption font-bold text-brand-accent">
             {String(index + 1).padStart(2, "0")}
@@ -190,9 +190,9 @@ function PricingCard({ service, index }: { service: PricedService; index: number
         <span className="flex h-12 w-12 shrink-0 items-center justify-center text-brand-accent">
           <ServiceIcon className="h-5 w-5" strokeWidth={1.75} />
         </span>
-      </div>
+      </div> */}
 
-      <h3 className="mt-4 text-title-sm font-semibold text-white bg-brand-accent px-1.5 w-fit">{service.name}</h3>
+      <h3 className="text-title-sm font-semibold text-white bg-brand-accent px-1.5 w-fit">{service.name}</h3>
       <p className="mt-2 text-copy text-body">{service.scope}</p>
 
       <ul className="mt-4 flex flex-col gap-2.5 rounded-md bg-brand-accent/6 p-4 border border-brand-accent/30 border-dotted">
@@ -306,9 +306,10 @@ function PriceList() {
           customVariants={landingRevealVariants}
           className="mt-4 max-w-3xl text-section text-ink"
         >
-          Six services, three common amounts,{" "}
-          <span className="bg-brand-accent px-1.5 text-on-primary">or the figure you name</span>
+          Choose an amount on any service,{" "}
+          <span className="bg-brand-accent px-1.5 text-on-primary">or enter your own at checkout</span>
         </TimelineContent>
+   
         <TimelineContent
           as="p"
           animationNum={2}
@@ -319,7 +320,7 @@ function PriceList() {
           Pick an amount on the card and press Purchase. Checkout opens pre-filled, and nothing is charged until you complete the payment step.
         </TimelineContent>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {pricedServices.map((service, index) => (
             <TimelineContent
               key={service.slug}

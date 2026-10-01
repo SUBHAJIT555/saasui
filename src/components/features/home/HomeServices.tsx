@@ -71,9 +71,9 @@ const HomeServices = () => {
               </div>
               <h3 className="mt-4 text-title-sm text-ink">{service.name}</h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-body">{service.summary}</p>
-              <p className="mt-4 text-caption font-semibold uppercase tracking-[0.14em] text-brand-accent">
+              {/* <p className="mt-4 text-caption font-semibold uppercase tracking-[0.14em] text-brand-accent">
                 {service.paymentPurpose}
-              </p>
+              </p> */}
               <GgwButton href={servicePath(service.slug)} variant="accent" className="mt-5 h-10 w-full">
                 View service
                 <ArrowRight className="h-4 w-4" />
