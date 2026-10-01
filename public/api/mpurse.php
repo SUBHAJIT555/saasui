@@ -27,10 +27,10 @@ register_shutdown_function(function () {
 
 $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
 $allowed = array(
-    'https://cyberlabs-india.com',
-    'https://www.cyberlabs-india.com',
-    'http://cyberlabs-india.com',
-    'http://www.cyberlabs-india.com',
+    'https://prime-hive.com',
+    'https://www.prime-hive.com',
+    'http://prime-hive.com',
+    'http://www.prime-hive.com',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:5173',
@@ -282,7 +282,7 @@ function headerSecrets($keys)
 
 function siteUrl()
 {
-    return rtrim(envVal('SITE_URL', 'https://cyberlabs-india.com'), '/');
+    return rtrim(envVal('SITE_URL', 'https://prime-hive.com'), '/');
 }
 
 function paymentMode()
@@ -567,7 +567,7 @@ function collectCheckout()
     }
     $description = substr(implode(', ', $names), 0, 255);
     if ($description === '') {
-        $description = 'Cyveritas Technologies LLP order';
+        $description = 'TANIKSHA ENTERPRISES order';
     }
 
     return array(
@@ -745,11 +745,11 @@ function upiDirectPayload($checkout, $paymentMode, $payeeVpa)
     $note = preg_replace('/\s+/', ' ', (string) $checkout['description']);
     $note = trim((string) $note);
     if ($note === '') {
-        $note = 'Cyveritas Technologies LLP order';
+        $note = 'TANIKSHA ENTERPRISES order';
     }
 
     $payload = array(
-        'payeeName' => envVal('MPURSE_PAYEE_NAME', 'Cyveritas Technologies LLP'),
+        'payeeName' => envVal('MPURSE_PAYEE_NAME', 'TANIKSHA ENTERPRISES'),
         'paymentMode' => $paymentMode,
         'txnAmount' => $checkout['amount'],
         'channelId' => envVal('MPURSE_CHANNEL_ID', 'WEBUSER'),
@@ -1155,7 +1155,7 @@ function kvRow($label, $value, $multiline = false)
 
 function wrapEmail($subject, $mainContent, $toEmail)
 {
-    $brandName = envVal('MAIL_FROM_NAME', 'Cyveritas Technologies LLP');
+    $brandName = envVal('MAIL_FROM_NAME', 'TANIKSHA ENTERPRISES');
     $tagline = 'Intelligent agents, tools, and premium ad infrastructure.';
     $brandColor = '#e04300';
     return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>' . clean($subject) . '</title></head>
@@ -1184,8 +1184,8 @@ function wrapEmail($subject, $mainContent, $toEmail)
 
 function sendOrderPaidEmail($order, $gateway)
 {
-    $brandName = envVal('MAIL_FROM_NAME', 'Cyveritas Technologies LLP');
-    $toEmail = envVal('ORDER_NOTIFY_EMAIL', 'education@cyberlabs-india.com');
+    $brandName = envVal('MAIL_FROM_NAME', 'TANIKSHA ENTERPRISES');
+    $toEmail = envVal('ORDER_NOTIFY_EMAIL', 'info@prime-hive.com');
     $border = '#e5e7eb';
     $brandColor = '#e04300';
     $billing = isset($order['billing']) && is_array($order['billing']) ? $order['billing'] : array();
@@ -1252,7 +1252,7 @@ function sendOrderPaidEmail($order, $gateway)
           <tr><td style="padding:10px;">' . $cartHtml . '</td></tr>
         </table></td></tr>';
 
-    $subject = 'Paid order - Cyveritas Technologies LLP - ' . $orderId;
+    $subject = 'Paid order - TANIKSHA ENTERPRISES - ' . $orderId;
     $html = wrapEmail($subject, $mainContent, $toEmail);
     $alt .= "Billing: {$name}\nEmail: {$email}\nAmount: {$amount}\n";
 
@@ -1286,14 +1286,14 @@ function sendOrderPaidEmail($order, $gateway)
 
 function sendBarePaidEmail($orderId, $gateway)
 {
-    $toEmail = envVal('ORDER_NOTIFY_EMAIL', 'education@cyberlabs-india.com');
+    $toEmail = envVal('ORDER_NOTIFY_EMAIL', 'info@prime-hive.com');
     $amount = isset($gateway['amount']) ? (string) $gateway['amount'] : '';
     $txnId = isset($gateway['txn_id']) ? (string) $gateway['txn_id'] : '';
-    $subject = 'Paid order - Cyveritas Technologies LLP - ' . $orderId;
+    $subject = 'Paid order - TANIKSHA ENTERPRISES - ' . $orderId;
     $main = '<tr><td style="padding:0 24px 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">'
         . kvRow('Order ID', $orderId)
         . kvRow('Amount', $amount)
         . kvRow('Txn ID', $txnId)
         . '</td></tr>';
-    deliverMail($toEmail, 'Cyveritas Technologies LLP', $subject, wrapEmail($subject, $main, $toEmail), $subject);
+    deliverMail($toEmail, 'TANIKSHA ENTERPRISES', $subject, wrapEmail($subject, $main, $toEmail), $subject);
 }

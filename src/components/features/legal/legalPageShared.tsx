@@ -1,10 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { StaticImageData } from "next/image";
 import { Link } from "@/lib/react-router";
 import { CONTACT } from "@/config/constants/contactInfo";
 import { legalNav } from "@/config/routes";
-import { cn } from "@/lib/utils";
+import { assetSrc, cn } from "@/lib/utils";
 
 export const LEGAL_UPDATED = "1 October 2026";
 
@@ -14,6 +15,7 @@ type LegalPageProps = {
   highlight: string;
   summary: string;
   currentPath: string;
+  image?: string | StaticImageData;
   children: ReactNode;
 };
 
@@ -23,17 +25,38 @@ export function LegalPage({
   highlight,
   summary,
   currentPath,
+  image,
   children,
 }: LegalPageProps) {
   return (
     <div className="relative z-10 mx-auto max-w-content border-x border-dashed border-hairline">
-      <section className="border-b border-dashed border-hairline px-4 pb-12 pt-32 text-center md:px-8 md:pb-16 md:pt-40">
-        <p className="text-caption font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
-        <h1 className="mx-auto mt-4 max-w-[16ch] text-balance text-hero text-ink">
-          {title} <span className="bg-brand-accent px-1.5 text-on-primary">{highlight}</span>
-        </h1>
-        <p className="mx-auto mt-3 max-w-[52ch] text-copy text-body">{summary}</p>
-        <p className="mt-4 text-caption text-muted">Updated {LEGAL_UPDATED}</p>
+      <section className="relative isolate overflow-hidden border-b border-dashed border-hairline px-4 pb-12 pt-32 text-center md:px-8 md:pb-16 md:pt-40">
+        {image ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-96 overflow-hidden"
+            style={{
+              WebkitMaskImage: "linear-gradient(to bottom, #000 0%, transparent 70%)",
+              maskImage: "linear-gradient(to bottom, #000 0%, transparent 70%)",
+            }}
+            aria-hidden
+          >
+            {/* Source photos are near-black, so they are lightened to stay behind dark heading text */}
+            <img
+              src={assetSrc(image)}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center opacity-15 grayscale"
+            />
+          </div>
+        ) : null}
+
+        <div className="relative z-10">
+          <p className="text-caption font-semibold uppercase tracking-[0.14em] text-muted">{label}</p>
+          <h1 className="mx-auto mt-4 max-w-[16ch] text-balance text-hero text-ink">
+            {title} <span className="bg-brand-accent px-1.5 text-on-primary">{highlight}</span>
+          </h1>
+          <p className="mx-auto mt-3 max-w-[52ch] text-copy text-body">{summary}</p>
+          <p className="mt-4 text-caption text-muted">Updated {LEGAL_UPDATED}</p>
+        </div>
       </section>
 
       <div className="mx-auto max-w-3xl px-4 py-12 md:px-8 md:py-16">

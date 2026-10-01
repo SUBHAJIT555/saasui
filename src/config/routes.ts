@@ -1,6 +1,7 @@
 export const siteRoutes = {
   home: "/",
   about: "/about",
+  pricing: "/pricing",
   services: "/services",
   contact: "/contact",
   checkout: "/checkout",
@@ -14,6 +15,7 @@ export const siteRoutes = {
 export const primaryNav = [
   { name: "Home", path: siteRoutes.home },
   { name: "About", path: siteRoutes.about },
+  { name: "Pricing", path: siteRoutes.pricing },
   { name: "Services", path: siteRoutes.services },
   { name: "Contact", path: siteRoutes.contact },
 ] as const;

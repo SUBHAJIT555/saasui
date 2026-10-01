@@ -52,11 +52,11 @@ function ne_deliver_mail(
     $smtpPass = ne_env('SMTP_PASS');
     $smtpPort = (int) ne_env('SMTP_PORT', '465');
     $smtpSecure = ne_env('SMTP_SECURE', 'smtps');
-    $fromEmail = ne_env('MAIL_FROM', ne_env('ORDER_NOTIFY_EMAIL', 'education@cyberlabs-india.com'));
+    $fromEmail = ne_env('MAIL_FROM', ne_env('ORDER_NOTIFY_EMAIL', 'info@prime-hive.com'));
     if ($smtpUser !== '') {
         $fromEmail = $smtpUser;
     }
-    $fromName = ne_env('MAIL_FROM_NAME', 'Cyveritas Technologies LLP');
+    $fromName = ne_env('MAIL_FROM_NAME', 'TANIKSHA ENTERPRISES');
 
     if ($smtpHost !== '' && $smtpUser !== '' && $smtpPass !== '') {
         $autoload = ne_find_autoload();

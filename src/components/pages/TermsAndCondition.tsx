@@ -3,6 +3,7 @@
 import { Link } from "@/lib/react-router";
 import { CONTACT } from "@/config/constants/contactInfo";
 import { LegalList, LegalPage, LegalSection } from "@/components/features/legal/legalPageShared";
+import heroScene from "@/assets/img/HeroImage/TermsandConditionsHero.webp";
 
 const linkClass = "text-brand-accent hover:underline";
 
@@ -12,8 +13,9 @@ const TermsAndCondition = () => {
       label="Terms"
       title="Terms for"
       highlight="the work"
-      summary="These terms cover the website and the business services offered by Cyveritas Technologies LLP."
+      summary={`These terms cover the website and the business services offered by ${CONTACT.registeredEntity}.`}
       currentPath="/terms-and-conditions"
+      image={heroScene}
     >
       <LegalSection number="01" title="Who these terms cover">
         <p>

@@ -1,14 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@/lib/react-router";
 import { useMobileMenuStore } from "@/store/mobileMenuStore";
 import { IoClose, IoMailOutline } from "react-icons/io5";
-import {
-  FaLinkedin,
-  FaFacebook,
-  FaInstagram,
-} from "react-icons/fa";
-import CallbackModal from "@/components/modals/CallbackModal";
 import { Logo } from "@/components";
 import { useLenis } from "@/hooks/useLenis";
 import { CONTACT } from "@/config/constants/contactInfo";
@@ -16,7 +10,6 @@ import { primaryNav } from "@/config/routes";
 
 const MobileMenu: React.FC = () => {
   const { isOpen, closeMenu } = useMobileMenuStore();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const lenis = useLenis();
 
   const navigationItems = primaryNav.map((item) => ({
@@ -184,29 +177,6 @@ const MobileMenu: React.FC = () => {
                 {/* Mobile Navigation Links */}
                 <nav className="space-y-4">
                   {navigationItems.map((item, index) => {
-                    if ("isButton" in item && item.isButton) {
-                      return (
-                        <motion.div
-                          key={item.name}
-                          className="mt-6 mb-4 border rounded-md border-neutral-300 border-dashed bg-white"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4, delay: index * 0.1 + 0.2 }}
-                        >
-                          <motion.button
-                            className="w-full px-6 py-3 font-montserrat text-md tracking-wider transition-all duration-200 text-text-primary"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => {
-                              setIsModalOpen(true);
-                              closeMenu();
-                            }}
-                          >
-                            {item.name}
-                          </motion.button>
-                        </motion.div>
-                      );
-                    }
                     return (
                       <Link
                         key={item.name}
@@ -230,62 +200,22 @@ const MobileMenu: React.FC = () => {
                   })}
                 </nav>
 
-                {/* Bottom Section - Social Media & Contact Info */}
+                {/* Bottom Section - Contact Info */}
                 <motion.div
                   className="mt-auto pt-8 pb-6"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: 0.8 }}
                 >
-                  {/* Social Media Links */}
-                  <div className="mb-6">
-                    <p className="text-text-primary text-xs font-inter-display mb-3 uppercase tracking-wider">
-                      Follow Us
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <motion.a
-                        href="https://www.linkedin.com/company/cyberlabs-india"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-text-primary hover:text-primary transition-colors duration-200"
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <FaLinkedin className="w-5 h-5" />
-                      </motion.a>
-                      <motion.a
-                        href="https://www.instagram.com/cyberlabsindia"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-text-primary hover:text-primary transition-colors duration-200"
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <FaInstagram className="w-5 h-5" />
-                      </motion.a>
-                      <motion.a
-                        href="https://www.facebook.com/cyberlabsindia"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-text-primary hover:text-primary transition-colors duration-200"
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <FaFacebook className="w-5 h-5" />
-                      </motion.a>
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
                   <div className="space-y-3 pb-6">
                     <motion.a
-                      href={`mailto:${CONTACT.educationEmail}`}
+                      href={`mailto:${CONTACT.supportEmail}`}
                       className="flex items-center gap-3 text-text-primary hover:text-primary transition-colors duration-200 group"
                       whileHover={{ x: 2 }}
                     >
                       <IoMailOutline className="w-5 h-5 shrink-0" />
                       <span className="text-sm font-inter-display">
-                        {CONTACT.educationEmail}
+                        {CONTACT.supportEmail}
                       </span>
                     </motion.a>
                   </div>
@@ -295,12 +225,6 @@ const MobileMenu: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Callback Modal */}
-      <CallbackModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </>
   );
 };

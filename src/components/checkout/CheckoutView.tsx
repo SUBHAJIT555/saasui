@@ -22,6 +22,7 @@ export function CheckoutView() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const service = getService(searchParams.get("service"));
+  const requestedAmount = Number(searchParams.get("amount"));
   const [choiceId, setChoiceId] = useState<AmountChoiceId>("custom");
   const [customAmount, setCustomAmount] = useState("");
   const [status, setStatus] = useState("");
@@ -39,13 +40,31 @@ export function CheckoutView() {
   });
 
   useEffect(() => {
+    // A price passed from the pricing page wins, so the figure the customer
+    // clicked is the figure already selected here.
+    const applyRequestedAmount = () => {
+      if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) return;
+      const preset = amountChoices.find(
+        (item) => item.amount !== null && item.amount === requestedAmount,
+      );
+      if (preset) {
+        setChoiceId(preset.id);
+        setCustomAmount("");
+        return;
+      }
+      setChoiceId("custom");
+      setCustomAmount(String(requestedAmount));
+    };
+
     const stored = readCheckoutRequest();
     if (!stored || stored.paidAt || (service && stored.serviceSlug !== service.slug)) {
+      applyRequestedAmount();
       setHydrated(true);
       return;
     }
     setChoiceId(stored.amountChoiceId || "custom");
     setCustomAmount(stored.amountChoiceId === "custom" ? String(stored.amount || "") : "");
+    applyRequestedAmount();
     setSaved({
       name: stored.name ?? "",
       email: stored.email ?? "",
@@ -58,7 +77,7 @@ export function CheckoutView() {
       message: stored.message ?? "",
     });
     setHydrated(true);
-  }, [service]);
+  }, [service, requestedAmount]);
 
   const choice = useMemo(() => getAmountChoice(choiceId), [choiceId]);
   const isCustom = choiceId === "custom";

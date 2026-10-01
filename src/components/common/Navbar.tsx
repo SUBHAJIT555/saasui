@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "@/lib/react-router";
 import { Logo } from "@/components";
 import { useLenis } from "@/hooks/useLenis";
 import { cn } from "@/lib/utils";
+import { SITE_NAME } from "@/lib/siteMetadata";
 import { GgwButton } from "@/components/ui/ggw-button";
 import {
     Root as DrawerRoot,
@@ -14,7 +15,7 @@ import {
     Footer as DrawerFooter,
 } from "@/components/ui/drawer";
 import { Kbd } from "@/components/ui/kbd";
-import { crosshatchBgStyle } from "@/config/constants/bootcampStyles";
+import { crosshatchBgStyle } from "@/config/constants/surfaceStyles";
 import { CONTACT } from "@/config/constants/contactInfo";
 import { Briefcase, ClipboardList, FolderOpen, Kanban, MessagesSquare, Receipt, type LucideIcon } from "lucide-react";
 import { services, servicePath, type Service } from "@/config/data/services";
@@ -593,7 +594,7 @@ const Navbar: React.FC = () => {
                                             Contact
                                         </GgwButton>
                                         <p className="text-center text-caption text-muted">
-                                            © {new Date().getFullYear()} CYBERLABS INDIA. All rights reserved.
+                                            © {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
                                         </p>
                                     </DrawerFooter>
                                 </DrawerContent>
@@ -642,7 +643,7 @@ const Navbar: React.FC = () => {
                             <div className="shrink-0 border-b border-dashed border-zinc-200 bg-transparent px-3 pb-2 pt-3 sm:px-4">
                                 <div className="flex items-center justify-between px-2 py-1.5">
                                     <span className="text-base font-semibold text-zinc-900">
-                                        CYBERLABS INDIA
+                                        {SITE_NAME}
                                     </span>
                                     <CandyButton
                                         type="button"

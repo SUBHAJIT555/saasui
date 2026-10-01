@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+
+# This project uses yarn; an npm lockfile here would drift from yarn.lock
+package-lock.json
 dist
 dist-ssr
 .next

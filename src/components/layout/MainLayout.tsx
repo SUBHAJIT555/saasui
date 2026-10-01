@@ -31,7 +31,25 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   // Handle hash-based scrolling (e.g. /page#section)
   // This MUST run first to take priority over scroll restoration
   // Offset accounts for fixed header height (~80px) + spacing
-  useLenisHashScroll({ offsets: { "contact-form": 50, 'frequently-asked-questions': 100, 'request-callback-form': 80, 'our-programs': 260, webinars: 80, home: 80, services: 80, why: 80, expertise: 80, career: 80, topics: 80, audience: 80, solutions: 80, contact: 80 } });
+  useLenisHashScroll({
+    offsets: {
+      home: 80,
+      about: 80,
+      services: 80,
+      overview: 80,
+      "price-list": 80,
+      included: 80,
+      "what-the-price-covers": 80,
+      "how-it-works": 80,
+      benefits: 80,
+      different: 80,
+      "why-choose-us": 80,
+      testimonials: 80,
+      company: 80,
+      faq: 100,
+      write: 50,
+    },
+  });
 
   // Handle scroll restoration on route change
   // ONLY handles non-hash routes (skips if hash is present)
@@ -46,7 +64,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <main className="w-full overflow-x-clip">
           {children}
         </main>
-        {/* <TextHoverEffect text="CYBERLABS INDIA" /> */}
         <Footer />
         <ScrollToTopButton />
         {/* ScrollRestoration REMOVED - conflicts with Lenis */}

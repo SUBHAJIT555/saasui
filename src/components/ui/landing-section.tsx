@@ -32,7 +32,7 @@ export const LANDING_GRADIENT_COLORS = [
   "#52525b",
 ] as const;
 
-/** Section h2 scale — matches About "What is CYBERLABS" */
+/** Section h2 scale */
 export const landingSectionHeadingClass =
   "text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl";
 

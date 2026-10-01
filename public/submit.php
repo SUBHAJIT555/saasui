@@ -1,4 +1,6 @@
 <?php
+// Handles the two forms on the site: the contact form and the newsletter signup.
+
 // --- Prevent any output before headers ---
 if (ob_get_level() === 0) {
     ob_start();
@@ -24,9 +26,9 @@ register_shutdown_function(function () {
 // --- CORS ---
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed = [
-    'http://localhost:5173',
-    'https://cyberlabs-india.com',
-    'https://www.cyberlabs-india.com',
+    'http://localhost:3000',
+    'https://prime-hive.com',
+    'https://www.prime-hive.com',
 ];
 if ($origin && in_array($origin, $allowed, true)) {
     header("Access-Control-Allow-Origin: $origin");
@@ -44,7 +46,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // --- Timezone ---
 date_default_timezone_set('Asia/Kolkata');
 mb_internal_encoding('UTF-8');
-// Content-Type already set above
+
+// --- Helpers ---
+function v(string $key, string $default = ''): string
+{
+    return isset($_POST[$key]) ? trim((string) $_POST[$key]) : $default;
+}
+function clean(?string $s): string
+{
+    return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+}
+function required(array $arr): ?string
+{
+    foreach ($arr as $k => $label) {
+        if (!isset($_POST[$k]) || $_POST[$k] === '')
+            return "$label is required";
+    }
+    return null;
+}
+function sendJsonError($message, $code = 422)
+{
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    http_response_code($code);
+    header('Content-Type: application/json; charset=utf-8', true);
+    echo json_encode(['error' => $message]);
+    exit;
+}
 
 // --- Parse JSON body (frontend sends JSON) ---
 $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
@@ -67,94 +96,14 @@ require $autoloadPath;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// --- Helpers ---
-function v(string $key, string $default = ''): string
-{
-    return isset($_POST[$key]) ? trim((string) $_POST[$key]) : $default;
-}
-function clean(?string $s): string
-{
-    return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-}
-function firstNonEmpty(array $keys): string
-{
-    foreach ($keys as $key) {
-        $value = v($key);
-        if ($value !== '') {
-            return $value;
-        }
-    }
-    return '';
-}
-function required(array $arr): ?string
-{
-    foreach ($arr as $k => $label) {
-        if (!isset($_POST[$k]) || $_POST[$k] === '')
-            return "$label is required";
-    }
-    return null;
-}
-function buildFullName(string $first, string $middle, string $last): string
-{
-    $parts = array_filter([trim($first), trim($middle), trim($last)], static function ($part) {
-        return $part !== '';
-    });
-    return implode(' ', $parts);
-}
-function genderLabel(string $gender): string
-{
-    if ($gender === 'he') {
-        return 'He';
-    }
-    if ($gender === 'she') {
-        return 'She';
-    }
-    return $gender;
-}
-function formatSubmittedDateTime(string $iso): string
-{
-    if ($iso === '') {
-        return '—';
-    }
-    $ts = strtotime($iso);
-    if ($ts === false) {
-        return $iso;
-    }
-    return date('F j, Y g:i A', $ts) . ' IST';
-}
-
 // --- Request validation ---
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    if (ob_get_level() > 0) {
-        ob_end_clean();
-    }
-    http_response_code(405);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['error' => 'Only POST allowed.']);
-    exit;
+    sendJsonError('Only POST allowed.', 405);
 }
 
-$formTypeRaw = v('formType');
-$formType = strtolower($formTypeRaw);
-if (!in_array($formType, ['contact', 'request-callback', 'newsletter', 'callback-modal', 'enrollment-modal', 'bootcamp-enrollment', 'webinar-registration'], true)) {
-    if (ob_get_level() > 0) {
-        ob_end_clean();
-    }
-    http_response_code(400);
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['error' => 'Invalid formType.']);
-    exit;
-}
-
-// --- Helper function to send JSON error response ---
-function sendJsonError($message, $code = 422) {
-    while (ob_get_level() > 0) {
-        ob_end_clean();
-    }
-    http_response_code($code);
-    header('Content-Type: application/json; charset=utf-8', true);
-    echo json_encode(['error' => $message]);
-    exit;
+$formType = strtolower(v('formType'));
+if (!in_array($formType, ['contact', 'newsletter'], true)) {
+    sendJsonError('Invalid formType.', 400);
 }
 
 // --- Field validation per form type ---
@@ -162,230 +111,72 @@ if ($formType === 'newsletter') {
     if ($msg = required(['email' => 'Email'])) {
         sendJsonError($msg, 422);
     }
-} elseif ($formType === 'contact') {
-    if (
-        $msg = required([
-            'fullName' => 'Full name',
-            'email' => 'Email address',
-            'mobileNumber' => 'Mobile number',
-            'currentBackground' => 'Current background',
-            'yearsOfExperience' => 'Years of experience',
-            'preferredTime' => 'Preferred time for call',
-        ])
-    ) {
-        sendJsonError($msg, 422);
-    }
-    if (v('programOfInterest') === '' && v('bootCampOfInterest') === '') {
-        sendJsonError('Please select at least one program or boot camp.', 422);
-    }
-    $mobile = v('mobileNumber');
-    $mobileDigits = preg_replace('/[^0-9]/', '', $mobile);
-    if (strlen($mobileDigits) < 10) {
-        sendJsonError('Please enter a valid mobile number.', 422);
-    }
-} elseif ($formType === 'request-callback') {
-    if (
-        $msg = required([
-            'fullName' => 'Full name',
-            'email' => 'Email address',
-            'mobileNumber' => 'Mobile number',
-            'currentBackground' => 'Current background',
-            'yearsOfExperience' => 'Years of experience',
-            'preferredTime' => 'Preferred time for call',
-        ])
-    ) {
-        sendJsonError($msg, 422);
-    }
-    if (v('programOfInterest') === '' && v('bootCampOfInterest') === '') {
-        sendJsonError('Please select at least one program or boot camp.', 422);
-    }
-    $mobile = v('mobileNumber');
-    $mobileDigits = preg_replace('/[^0-9]/', '', $mobile);
-    if (strlen($mobileDigits) < 10) {
-        sendJsonError('Please enter a valid mobile number.', 422);
-    }
-} elseif ($formType === 'callback-modal') {
-    if (
-        $msg = required([
-            'name' => 'Name',
-            'email' => 'Email address',
-            'phone' => 'Phone number',
-            'callbackTime' => 'Preferred callback time',
-        ])
-    ) {
-        sendJsonError($msg, 422);
-    }
-    if (v('enquiryFor') === '' && v('bootCampOfInterest') === '') {
-        sendJsonError('Please select at least one program or boot camp.', 422);
-    }
-    $phoneDigits = preg_replace('/[^0-9]/', '', v('phone'));
-    if (strlen($phoneDigits) < 10) {
-        sendJsonError('Please enter a valid phone number.', 422);
-    }
-} elseif ($formType === 'enrollment-modal' || $formType === 'bootcamp-enrollment') {
-    if (
-        $msg = required([
-            'fullName' => 'Full name',
-            'email' => 'Email address',
-            'phoneNumber' => 'Phone number',
-            'age' => 'Age',
-            'gender' => 'Gender',
-            'occupation' => 'Occupation',
-            'preferredCallTime' => 'Preferred call time',
-            'address' => 'Address',
-            'collegeSchool' => 'College/School',
-            'graduationYear' => 'Graduation year',
-        ])
-    ) {
-        sendJsonError($msg, 422);
-    }
-    // Phone validation
-    $phoneDigits = preg_replace('/[^0-9]/', '', v('phoneNumber'));
-    if (strlen($phoneDigits) < 10) {
-        sendJsonError('Please enter a valid phone number.', 422);
-    }
-    // Age validation
-    $age = (int)v('age');
-    if ($age < 13 || $age > 100) {
-        sendJsonError('Age must be between 13 and 100.', 422);
-    }
-    // Email validation
-    $email = v('email');
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        sendJsonError('Invalid email address.', 422);
-    }
-} elseif ($formType === 'webinar-registration') {
-    if (
-        $msg = required([
-            'firstName' => 'First name',
-            'lastName' => 'Last name',
-            'gender' => 'Gender',
-            'email' => 'Email address',
-            'mobile' => 'Mobile number',
-            'background' => 'Current background',
-            'yearsOfExperience' => 'Years of experience',
-            'preferredCallDateTime' => 'Preferred date and time for call',
-            'webinarId' => 'Webinar',
-            'webinarTopic' => 'Webinar topic',
-            'webinarScheduledAt' => 'Webinar schedule',
-        ])
-    ) {
-        sendJsonError($msg, 422);
-    }
-    $mobileDigits = preg_replace('/[^0-9]/', '', v('mobile'));
-    if (strlen($mobileDigits) < 10) {
-        sendJsonError('Please enter a valid mobile number.', 422);
-    }
-    $years = (int) v('yearsOfExperience');
-    if ($years < 0 || $years > 60) {
-        sendJsonError('Years of experience must be between 0 and 60.', 422);
-    }
-    if (!in_array(v('gender'), ['he', 'she'], true)) {
-        sendJsonError('Please select a valid gender option.', 422);
-    }
-}
-
-// --- Email validation (only when form has email) ---
-if (in_array($formType, ['newsletter', 'contact', 'request-callback', 'callback-modal', 'enrollment-modal', 'bootcamp-enrollment', 'webinar-registration'], true)) {
-    $email = v('email');
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        sendJsonError('Invalid email address.', 422);
-    }
-}
-
-// --- Capture values (unified name/phone/email per form type) ---
-if ($formType === 'webinar-registration') {
-    $name = buildFullName(v('firstName'), v('middleName'), v('lastName'));
-    $phone = v('mobile');
-} elseif (in_array($formType, ['contact', 'request-callback', 'enrollment-modal', 'bootcamp-enrollment'], true)) {
-    $name = v('fullName');
-    $phone = in_array($formType, ['contact', 'request-callback'], true) ? v('mobileNumber') : v('phoneNumber');
 } else {
-    $name = v('name');
-    $phone = v('phone');
+    if (
+        $msg = required([
+            'fullName' => 'Full name',
+            'email' => 'Email address',
+            'mobileNumber' => 'Mobile number',
+            'service' => 'Service',
+        ])
+    ) {
+        sendJsonError($msg, 422);
+    }
+    $mobileDigits = preg_replace('/[^0-9]/', '', v('mobileNumber'));
+    if (strlen($mobileDigits) < 10) {
+        sendJsonError('Please enter a valid mobile number.', 422);
+    }
 }
+
 $email = v('email');
-$serverip = $_SERVER['HTTP_X_FORWARDED_FOR']
-    ?? $_SERVER['HTTP_CLIENT_IP']
-    ?? $_SERVER['REMOTE_ADDR']
-    ?? '';
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    sendJsonError('Invalid email address.', 422);
+}
 
-$utm_source = v('utm_source');
-$utm_medium = v('utm_medium');
-$utm_campaign = v('utm_campaign');
-$utm_term = v('utm_term');
-$utm_content = v('utm_content');
+$name = $formType === 'contact' ? v('fullName') : v('name');
+$phone = v('mobileNumber');
 
+// --- SMTP CONFIG (set these in the server environment, never in this file) ---
+$smtpHost = getenv('SMTP_HOST') ?: '';
+$smtpUser = getenv('SMTP_USER') ?: 'info@prime-hive.com';
+$smtpPass = getenv('SMTP_PASS') ?: '';
+$smtpPort = (int) (getenv('SMTP_PORT') ?: 465);
+$smtpSecure = strtolower(getenv('SMTP_SECURE') ?: 'smtps');
 
-
-// --- SMTP CONFIG (replace with your CYBERLABS India SMTP) ---
-$smtpHost = 'box2368.bluehost.com';
-$smtpUser = 'admin@cyberlabs-india.com';
-$smtpPass = 'Admin@Cyberlabs@9474';
-$smtpPort = 465;
-$smtpSecure = 'smtps';
-
-$toAddresses = [['subhajit@baharnani.com', 'CYBERLABS INDIA']];
+$notifyEmail = getenv('ORDER_NOTIFY_EMAIL') ?: 'info@prime-hive.com';
+$toAddresses = [[$notifyEmail, 'Prime Hive']];
 $fromEmail = $smtpUser;
-$fromName = 'CYBERLABS INDIA';
-
+$fromName = 'Prime Hive';
 
 // --- Brand styling ---
-$brandName = 'CYBERLABS INDIA';
-$tagline = 'Israeli-led Cyber Defense Training in India.';
-$brandColor = '#0a2540';
-$muted = '#6b7280';
-$bg = '#f9fafb';
-$cardBg = '#ffffff';
+$brandName = 'Prime Hive';
+$tagline = 'Business support services by TANIKSHA ENTERPRISES.';
 $border = '#e5e7eb';
 
 // --- Subject ---
-switch ($formType) {
-    case 'contact':
-        $subject = "New Contact Inquiry – " . clean($name) . " – CYBERLABS India";
-        break;
-    case 'request-callback':
-        $subject = "New Request Callback – " . clean($name) . " – CYBERLABS India";
-        break;
-    case 'newsletter':
-        $subject = "New Newsletter Signup – " . clean($email) . " – CYBERLABS India";
-        break;
-    case 'callback-modal':
-        $subject = "New Callback Request – " . clean($name) . " – CYBERLABS India";
-        break;
-    case 'enrollment-modal':
-        $subject = "New Program Enrollment – " . clean($name) . " – CYBERLABS India";
-        break;
-    case 'bootcamp-enrollment':
-        $subject = "New Boot Camp Enrollment – " . clean($name) . " – CYBERLABS India";
-        break;
-    case 'webinar-registration':
-        $subject = "New Webinar Registration – " . clean(v('webinarTopic')) . " – " . clean($name) . " – CYBERLABS India";
-        break;
-    default:
-        $subject = "Form Submission – CYBERLABS India";
-        break;
+if ($formType === 'newsletter') {
+    $subject = "New Newsletter Signup – " . clean($email) . " – Prime Hive";
+} else {
+    $subject = "New Contact Inquiry – " . clean($name) . " – Prime Hive";
 }
 
-
 // --- Dynamic content per form type ---
-$mainContent = '';
-
-if ($formType === 'contact' || $formType === 'request-callback') {
+if ($formType === 'newsletter') {
+    $sectionTitle = 'Newsletter Subscription';
+    $details = '<p><strong>Email:</strong> ' . clean($email) . '</p>';
+} else {
+    $sectionTitle = 'Contact Form Submission';
     $details = '';
     $details .= '<p><strong>Full Name:</strong> ' . clean($name) . '</p>';
     $details .= '<p><strong>Email:</strong> ' . clean($email) . '</p>';
     $details .= '<p><strong>Mobile Number:</strong> ' . clean($phone) . '</p>';
-    $details .= '<p><strong>Current Background:</strong> ' . clean(v('currentBackground')) . '</p>';
-    $details .= '<p><strong>Years of Experience:</strong> ' . clean(v('yearsOfExperience')) . '</p>';
-    $details .= '<p><strong>Program of Interest:</strong> ' . (v('programOfInterest') !== '' ? clean(v('programOfInterest')) : '—') . '</p>';
-    $details .= '<p><strong>Boot Camp of Interest:</strong> ' . (v('bootCampOfInterest') !== '' ? clean(v('bootCampOfInterest')) : '—') . '</p>';
-    $details .= '<p><strong>Preferred Time for Call:</strong> ' . clean(v('preferredTime')) . '</p>';
-    if (v('questionsOrGoals') !== '') {
-        $details .= '<p><strong>Questions or Goals:</strong><br>' . nl2br(clean(v('questionsOrGoals'))) . '</p>';
+    $details .= '<p><strong>Service:</strong> ' . clean(v('service')) . '</p>';
+    if (v('message') !== '') {
+        $details .= '<p><strong>Message:</strong><br>' . nl2br(clean(v('message'))) . '</p>';
     }
-    $sectionTitle = $formType === 'contact' ? 'Contact Form Submission' : 'Request Callback Submission';
-    $mainContent = '
+}
+
+$mainContent = '
     <tr>
       <td style="padding:0 24px 24px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' . $border . ';border-radius:4px;">
@@ -394,115 +185,6 @@ if ($formType === 'contact' || $formType === 'request-callback') {
         </table>
       </td>
     </tr>';
-} elseif ($formType === 'callback-modal') {
-    $programLink = firstNonEmpty(['programLink', 'programUrl', 'programSlug']);
-    $bootcampLink = firstNonEmpty(['bootcampLink', 'bootcampUrl', 'bootcampSlug']);
-    $details = '';
-    $details .= '<p><strong>Name:</strong> ' . clean($name) . '</p>';
-    $details .= '<p><strong>Email:</strong> ' . clean($email) . '</p>';
-    $details .= '<p><strong>Phone:</strong> ' . clean($phone) . '</p>';
-    $details .= '<p><strong>Preferred Callback Time:</strong> ' . clean(v('callbackTime')) . '</p>';
-    $details .= '<p><strong>Program Enquiry:</strong> ' . (v('enquiryFor') !== '' ? clean(v('enquiryFor')) : '—') . '</p>';
-    $details .= '<p><strong>Boot Camp Enquiry:</strong> ' . (v('bootCampOfInterest') !== '' ? clean(v('bootCampOfInterest')) : '—') . '</p>';
-    if ($programLink !== '') {
-        $details .= '<p><strong>Program Link:</strong> ' . clean($programLink) . '</p>';
-    }
-    if ($bootcampLink !== '') {
-        $details .= '<p><strong>Boot Camp Link:</strong> ' . clean($bootcampLink) . '</p>';
-    }
-    $mainContent = '
-    <tr>
-      <td style="padding:0 24px 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' . $border . ';border-radius:4px;">
-          <tr><td style="background:#f3f4f6;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-weight:600;color:#0a2540;">Callback Modal Submission</td></tr>
-          <tr><td style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">' . $details . '</td></tr>
-        </table>
-      </td>
-    </tr>';
-} elseif ($formType === 'newsletter') {
-    $mainContent = '
-    <tr>
-      <td style="padding:0 24px 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' . $border . ';border-radius:4px;">
-          <tr><td style="background:#f3f4f6;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-weight:600;color:#0a2540;">Newsletter Subscription</td></tr>
-          <tr><td style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
-            <p><strong>Email:</strong> ' . clean($email) . '</p>
-          </td></tr>
-        </table>
-      </td>
-    </tr>';
-} elseif ($formType === 'webinar-registration') {
-    $details = '';
-    $details .= '<p><strong>Webinar Topic:</strong> ' . clean(v('webinarTopic')) . '</p>';
-    $details .= '<p><strong>Webinar ID:</strong> ' . clean(v('webinarId')) . '</p>';
-    $details .= '<p><strong>Webinar Date &amp; Time:</strong> ' . clean(formatSubmittedDateTime(v('webinarScheduledAt'))) . '</p>';
-    $details .= '<p><strong>First Name:</strong> ' . clean(v('firstName')) . '</p>';
-    if (v('middleName') !== '') {
-        $details .= '<p><strong>Middle Name:</strong> ' . clean(v('middleName')) . '</p>';
-    }
-    $details .= '<p><strong>Last Name:</strong> ' . clean(v('lastName')) . '</p>';
-    $details .= '<p><strong>Gender:</strong> ' . clean(genderLabel(v('gender'))) . '</p>';
-    $details .= '<p><strong>Email:</strong> ' . clean($email) . '</p>';
-    $details .= '<p><strong>Mobile Number:</strong> ' . clean($phone) . '</p>';
-    $details .= '<p><strong>Current Background:</strong> ' . clean(v('background')) . '</p>';
-    $details .= '<p><strong>Years of Experience:</strong> ' . clean(v('yearsOfExperience')) . '</p>';
-    $details .= '<p><strong>Preferred Call Date &amp; Time:</strong> ' . clean(formatSubmittedDateTime(v('preferredCallDateTime'))) . '</p>';
-    if (v('specificQuestion') !== '') {
-        $details .= '<p><strong>Specific Question:</strong><br>' . nl2br(clean(v('specificQuestion'))) . '</p>';
-    }
-    $mainContent = '
-    <tr>
-      <td style="padding:0 24px 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' . $border . ';border-radius:4px;">
-          <tr><td style="background:#f3f4f6;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-weight:600;color:#0a2540;">Webinar Registration</td></tr>
-          <tr><td style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">' . $details . '</td></tr>
-        </table>
-      </td>
-    </tr>';
-} elseif ($formType === 'enrollment-modal' || $formType === 'bootcamp-enrollment') {
-    $enrollmentLabel = $formType === 'bootcamp-enrollment' ? 'Boot Camp Enrollment Request' : 'Program Enrollment Request';
-    $courseLink = firstNonEmpty(['courseLink', 'courseUrl', 'courseSlug']);
-    $details = '';
-    $details .= '<p><strong>Enrollment Type:</strong> ' . ($formType === 'bootcamp-enrollment' ? 'Elite Boot Camp' : 'Flagship Program') . '</p>';
-    $details .= '<p><strong>Full Name:</strong> ' . clean($name) . '</p>';
-    $details .= '<p><strong>Email:</strong> ' . clean($email) . '</p>';
-    $details .= '<p><strong>Phone Number:</strong> ' . clean($phone) . '</p>';
-    if (v('secondaryPhoneNumber') !== '') {
-        $details .= '<p><strong>Secondary Phone Number:</strong> ' . clean(v('secondaryPhoneNumber')) . '</p>';
-    }
-    $details .= '<p><strong>Age:</strong> ' . clean(v('age')) . '</p>';
-    $details .= '<p><strong>Gender:</strong> ' . clean(v('gender')) . '</p>';
-    $details .= '<p><strong>Occupation:</strong> ' . clean(v('occupation')) . '</p>';
-    $details .= '<p><strong>Preferred Call Time:</strong> ' . clean(v('preferredCallTime')) . '</p>';
-    $details .= '<p><strong>Address:</strong><br>' . nl2br(clean(v('address'))) . '</p>';
-    $details .= '<p><strong>College/School:</strong> ' . clean(v('collegeSchool')) . '</p>';
-    $details .= '<p><strong>Graduation Year:</strong> ' . clean(v('graduationYear')) . '</p>';
-    if ($courseLink !== '') {
-        $details .= '<p><strong>Course Link:</strong> ' . clean($courseLink) . '</p>';
-    }
-    $mainContent = '
-    <tr>
-      <td style="padding:0 24px 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' . $border . ';border-radius:4px;">
-          <tr><td style="background:#f3f4f6;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-weight:600;color:#0a2540;">' . $enrollmentLabel . '</td></tr>
-          <tr><td style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">' . $details . '</td></tr>
-        </table>
-      </td>
-    </tr>';
-} else {
-    $mainContent = '
-    <tr>
-      <td style="padding:0 24px 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ' . $border . ';border-radius:4px;">
-          <tr><td style="background:#f3f4f6;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-weight:600;color:#0a2540;">Form Submission</td></tr>
-          <tr><td style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
-            <p><strong>Email:</strong> ' . clean($email) . '</p>
-          </td></tr>
-        </table>
-      </td>
-    </tr>';
-}
-
 
 // --- HTML email template (Outlook-safe) ---
 ob_start(); ?>
@@ -588,25 +270,6 @@ ob_start(); ?>
 
                     <?= $mainContent ?>
 
-                    <!-- <tr>
-                        <td style="padding:0 24px 24px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0"
-                            style="border:1px solid #e5e7eb;border-radius:4px;">
-                            <tr>
-                                <td style="background:#f3f4f6;padding:8px 10px;font-family:Arial,Helvetica,sans-serif;font-weight:600;color:#0a2540;">
-                                Google Sheet Sync Status
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">
-                                
-                                </td>
-                            </tr>
-                            </table>
-                        </td>
-                    </tr> -->
-
-
                     <tr>
                         <td align="center"
                             style="padding:14px 20px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7280;">
@@ -625,70 +288,15 @@ $html = ob_get_clean();
 
 // --- Alt text ---
 $alt = strip_tags($subject) . "\n\n";
-if ($formType === 'contact' || $formType === 'request-callback') {
+if ($formType === 'newsletter') {
+    $alt .= "Email: " . $email . "\n";
+} else {
     $alt .= "Name: " . $name . "\n";
-    $alt .= "Email: " . $email . "\n";
-    $alt .= "Phone: " . $phone . "\n";
-    $alt .= "Current Background: " . v('currentBackground') . "\n";
-    $alt .= "Years of Experience: " . v('yearsOfExperience') . "\n";
-    $alt .= "Program of Interest: " . (v('programOfInterest') !== '' ? v('programOfInterest') : '—') . "\n";
-    $alt .= "Boot Camp of Interest: " . (v('bootCampOfInterest') !== '' ? v('bootCampOfInterest') : '—') . "\n";
-    $alt .= "Preferred Time: " . v('preferredTime') . "\n";
-    if (v('questionsOrGoals') !== '')
-        $alt .= "Questions or Goals: " . strip_tags(v('questionsOrGoals')) . "\n";
-} elseif ($formType === 'callback-modal') {
-    $programLink = firstNonEmpty(['programLink', 'programUrl', 'programSlug']);
-    $bootcampLink = firstNonEmpty(['bootcampLink', 'bootcampUrl', 'bootcampSlug']);
-    $alt .= "Name: " . $name . "\n";
-    $alt .= "Email: " . $email . "\n";
-    $alt .= "Phone: " . $phone . "\n";
-    $alt .= "Callback Time: " . v('callbackTime') . "\n";
-    $alt .= "Program Enquiry: " . (v('enquiryFor') !== '' ? v('enquiryFor') : '—') . "\n";
-    $alt .= "Boot Camp Enquiry: " . (v('bootCampOfInterest') !== '' ? v('bootCampOfInterest') : '—') . "\n";
-    if ($programLink !== '') {
-        $alt .= "Program Link: " . $programLink . "\n";
-    }
-    if ($bootcampLink !== '') {
-        $alt .= "Boot Camp Link: " . $bootcampLink . "\n";
-    }
-} elseif ($formType === 'newsletter') {
-    $alt .= "Email: " . $email . "\n";
-} elseif ($formType === 'webinar-registration') {
-    $alt .= "Webinar Topic: " . v('webinarTopic') . "\n";
-    $alt .= "Webinar ID: " . v('webinarId') . "\n";
-    $alt .= "Webinar Date & Time: " . formatSubmittedDateTime(v('webinarScheduledAt')) . "\n";
-    $alt .= "First Name: " . v('firstName') . "\n";
-    if (v('middleName') !== '') {
-        $alt .= "Middle Name: " . v('middleName') . "\n";
-    }
-    $alt .= "Last Name: " . v('lastName') . "\n";
-    $alt .= "Gender: " . genderLabel(v('gender')) . "\n";
     $alt .= "Email: " . $email . "\n";
     $alt .= "Mobile: " . $phone . "\n";
-    $alt .= "Current Background: " . v('background') . "\n";
-    $alt .= "Years of Experience: " . v('yearsOfExperience') . "\n";
-    $alt .= "Preferred Call Date & Time: " . formatSubmittedDateTime(v('preferredCallDateTime')) . "\n";
-    if (v('specificQuestion') !== '') {
-        $alt .= "Specific Question: " . strip_tags(v('specificQuestion')) . "\n";
-    }
-} elseif ($formType === 'enrollment-modal' || $formType === 'bootcamp-enrollment') {
-    $courseLink = firstNonEmpty(['courseLink', 'courseUrl', 'courseSlug']);
-    $alt .= "Enrollment Type: " . ($formType === 'bootcamp-enrollment' ? 'Elite Boot Camp' : 'Flagship Program') . "\n";
-    $alt .= "Name: " . $name . "\n";
-    $alt .= "Email: " . $email . "\n";
-    $alt .= "Phone: " . $phone . "\n";
-    if (v('secondaryPhoneNumber') !== '') {
-        $alt .= "Secondary Phone: " . v('secondaryPhoneNumber') . "\n";
-    }
-    $alt .= "Age: " . v('age') . "\n";
-    $alt .= "Gender: " . v('gender') . "\n";
-    $alt .= "Occupation: " . v('occupation') . "\n";
-    $alt .= "Preferred Call Time: " . v('preferredCallTime') . "\n";
-    $alt .= "Address: " . strip_tags(v('address')) . "\n";
-    $alt .= "College/School: " . v('collegeSchool') . "\n";
-    $alt .= "Graduation Year: " . v('graduationYear') . "\n";
-    if ($courseLink !== '') {
-        $alt .= "Course Link: " . $courseLink . "\n";
+    $alt .= "Service: " . v('service') . "\n";
+    if (v('message') !== '') {
+        $alt .= "Message: " . strip_tags(v('message')) . "\n";
     }
 }
 
@@ -700,7 +308,7 @@ try {
     $mail->SMTPAuth = true;
     $mail->Username = $smtpUser;
     $mail->Password = $smtpPass;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    $mail->SMTPSecure = $smtpSecure === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port = $smtpPort;
     $mail->CharSet = 'UTF-8';
     $mail->Encoding = 'base64';
@@ -708,9 +316,7 @@ try {
     $mail->setFrom($fromEmail, $fromName);
     foreach ($toAddresses as [$addr, $nm])
         $mail->addAddress($addr, $nm);
-    if ($email !== '') {
-        $mail->addReplyTo($email, $name !== '' ? $name : $email);
-    }
+    $mail->addReplyTo($email, $name !== '' ? $name : $email);
 
     $mail->isHTML(true);
     $mail->Subject = $subject;
@@ -718,22 +324,21 @@ try {
     $mail->AltBody = $alt;
     $mail->send();
 
-    // --- Auto-reply to customer (only when form has email) ---
-    if ($email !== '' && in_array($formType, ['newsletter', 'contact', 'request-callback', 'callback-modal', 'enrollment-modal', 'bootcamp-enrollment', 'webinar-registration'], true)) {
-        try {
-            $mail->clearAllRecipients();
-            $mail->clearAttachments();
-            $mail->clearReplyTos();
-            $mail->clearCCs();
-            $mail->clearBCCs();
+    // --- Auto-reply to the person who wrote in ---
+    try {
+        $mail->clearAllRecipients();
+        $mail->clearAttachments();
+        $mail->clearReplyTos();
+        $mail->clearCCs();
+        $mail->clearBCCs();
 
-            $mail->setFrom($fromEmail, $fromName);
-            $mail->addAddress($email, $name !== '' ? $name : $email);
+        $mail->setFrom($fromEmail, $fromName);
+        $mail->addAddress($email, $name !== '' ? $name : $email);
 
-            $customerName = $name !== '' ? clean($name) : 'there';
-            if ($formType === 'newsletter') {
-                $mail->Subject = "Thanks for subscribing – $brandName";
-                $autoReplyHtml = "
+        $customerName = $name !== '' ? clean($name) : 'there';
+        if ($formType === 'newsletter') {
+            $mail->Subject = "Thanks for subscribing – $brandName";
+            $autoReplyHtml = "
                     <div style='font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
                         <p style='font-size: 16px; color: #333; margin-bottom: 16px;'>Hi " . $customerName . ",</p>
                         <p style='font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;'>
@@ -746,35 +351,10 @@ try {
                         </p>
                     </div>
                 ";
-                $mail->AltBody = "Hi " . $customerName . ",\n\nThanks for subscribing to $brandName. You will receive updates and news from us.\n\nRegards,\n$brandName Team";
-            } elseif ($formType === 'webinar-registration') {
-                $webinarTopic = clean(v('webinarTopic'));
-                $webinarWhen = clean(formatSubmittedDateTime(v('webinarScheduledAt')));
-                $preferredCallWhen = clean(formatSubmittedDateTime(v('preferredCallDateTime')));
-                $mail->Subject = "Webinar registration received – $brandName";
-                $autoReplyHtml = "
-                    <div style='font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
-                        <p style='font-size: 16px; color: #333; margin-bottom: 16px;'>Hi " . $customerName . ",</p>
-                        <p style='font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;'>
-                            Thanks for registering for our webinar <strong>" . $webinarTopic . "</strong> scheduled on <strong>" . $webinarWhen . "</strong>.
-                        </p>
-                        <p style='font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;'>
-                            Our team has received your details and will call you at your preferred time: <strong>" . $preferredCallWhen . "</strong>.
-                        </p>
-                        <p style='font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;'>
-                            If it's urgent, feel free to reply to this email.
-                        </p>
-                        <br>
-                        <p style='font-size: 15px; color: #333; margin-top: 24px;'>
-                            Regards,<br>
-                            <strong>$brandName Team</strong>
-                        </p>
-                    </div>
-                ";
-                $mail->AltBody = "Hi " . $customerName . ",\n\nThanks for registering for our webinar " . v('webinarTopic') . " scheduled on " . formatSubmittedDateTime(v('webinarScheduledAt')) . ".\n\nOur team has received your details and will call you at your preferred time: " . formatSubmittedDateTime(v('preferredCallDateTime')) . ".\n\nIf it's urgent, feel free to reply to this email.\n\nRegards,\n$brandName Team";
-            } else {
-                $mail->Subject = "Thanks for contacting $brandName";
-                $autoReplyHtml = "
+            $mail->AltBody = "Hi " . $customerName . ",\n\nThanks for subscribing to $brandName. You will receive updates and news from us.\n\nRegards,\n$brandName Team";
+        } else {
+            $mail->Subject = "Thanks for contacting $brandName";
+            $autoReplyHtml = "
                     <div style='font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>
                         <p style='font-size: 16px; color: #333; margin-bottom: 16px;'>Hi " . $customerName . ",</p>
                         <p style='font-size: 15px; color: #555; line-height: 1.6; margin-bottom: 16px;'>
@@ -790,15 +370,14 @@ try {
                         </p>
                     </div>
                 ";
-                $mail->AltBody = "Hi " . $customerName . ",\n\nThanks for reaching out to $brandName. Our team has received your details and will contact you shortly.\n\nIf it's urgent, feel free to reply to this email.\n\nRegards,\n$brandName Team";
-            }
-
-            $mail->isHTML(true);
-            $mail->Body = $autoReplyHtml;
-            $mail->send();
-        } catch (Exception $e) {
-            error_log('Auto-reply Error: ' . $mail->ErrorInfo);
+            $mail->AltBody = "Hi " . $customerName . ",\n\nThanks for reaching out to $brandName. Our team has received your details and will contact you shortly.\n\nIf it's urgent, feel free to reply to this email.\n\nRegards,\n$brandName Team";
         }
+
+        $mail->isHTML(true);
+        $mail->Body = $autoReplyHtml;
+        $mail->send();
+    } catch (Exception $e) {
+        error_log('Auto-reply Error: ' . $mail->ErrorInfo);
     }
 
     while (ob_get_level() > 0) {
@@ -812,4 +391,3 @@ try {
     error_log('PHP Error: ' . $e->getMessage());
     sendJsonError('Server error occurred. Please try again later.', 500);
 }
-

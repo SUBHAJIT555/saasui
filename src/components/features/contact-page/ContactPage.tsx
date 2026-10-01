@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { ArrowRight, Mail, MapPin, MessagesSquare } from "lucide-react";
+import { ArrowRight, Mail, MapPin } from "lucide-react";
 import { TimelineContent } from "@/components/ui/timeline-animation";
 import { AccentLabel, GgwButton } from "@/components/ui/ggw-button";
 import { EmailField } from "@/components/ui/EmailField";
@@ -13,12 +13,12 @@ import { useFormSubmitFeedback } from "@/hooks/useFormSubmitFeedback";
 import { FORM_FEEDBACK_COPY } from "@/config/constants/formFeedbackCopy";
 import { formatIndianMobileE164 } from "@/lib/formValidation";
 import { CONTACT } from "@/config/constants/contactInfo";
-import { WHATSAPP_URL } from "@/config/data/site-contact";
 import { services } from "@/config/data/services";
 import { siteRoutes } from "@/config/routes";
 import { assetSrc } from "@/lib/utils";
 import messagesImage from "@/assets/img/Home/undraw/work-emails_3qkc.svg";
 import faqImage from "@/assets/img/Home/undraw/working-at-home_usrj.svg";
+import heroScene from "@/assets/img/HeroImage/ContactHero.webp";
 import {
   LandingSectionShell,
   landingRevealVariants,
@@ -41,9 +41,6 @@ const revealVariants = {
     opacity: 0,
   },
 };
-
-const HERO_SCENE =
-  "https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=2400&q=80";
 
 const inputBase =
   "w-full rounded-md border bg-canvas px-4 py-3 text-base text-ink placeholder:text-muted transition-colors focus:border-brand-accent focus:outline-none focus:ring-2 focus:ring-brand-accent/20";
@@ -93,7 +90,7 @@ const faqItems = [
   },
   {
     question: "What email should I use?",
-    answer: `Use the form, or write directly to ${CONTACT.educationEmail}. Include the service and a short description of the work.`,
+    answer: `Use the form, or write directly to ${CONTACT.supportEmail}. Include the service and a short description of the work.`,
   },
   {
     question: "Where is the office?",
@@ -118,7 +115,7 @@ function ContactHero() {
           maskImage: "linear-gradient(to bottom, #000 0%, transparent 50%)",
         }}
       >
-        <img src={HERO_SCENE} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+        <img src={assetSrc(heroScene)} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-content flex-col items-center px-4 text-center sm:px-6 md:px-8">
@@ -248,8 +245,8 @@ function ContactWrite() {
               <Mail className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" strokeWidth={1.75} />
               <div>
                 <p className="text-sm font-semibold text-ink">Email</p>
-                <a href={`mailto:${CONTACT.educationEmail}`} className="text-sm text-brand-accent hover:underline">
-                  {CONTACT.educationEmail}
+                <a href={`mailto:${CONTACT.supportEmail}`} className="text-sm text-brand-accent hover:underline">
+                  {CONTACT.supportEmail}
                 </a>
               </div>
             </li>
@@ -262,15 +259,6 @@ function ContactWrite() {
                     {line}
                   </p>
                 ))}
-              </div>
-            </li>
-            <li className="flex gap-3 border-b border-dashed border-hairline py-4">
-              <MessagesSquare className="mt-0.5 h-5 w-5 shrink-0 text-brand-accent" strokeWidth={1.75} />
-              <div>
-                <p className="text-sm font-semibold text-ink">WhatsApp</p>
-                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-accent hover:underline">
-                  Message on WhatsApp
-                </a>
               </div>
             </li>
           </ul>

@@ -45,8 +45,8 @@ export const sitemapBlocks: SitemapBlock[] = [
                 links: [
                     { label: "Contact", path: "/contact" },
                     {
-                        label: CONTACT.educationEmail,
-                        path: `mailto:${CONTACT.educationEmail}`,
+                        label: CONTACT.supportEmail,
+                        path: `mailto:${CONTACT.supportEmail}`,
                         external: true,
                     },
                 ],
@@ -67,37 +67,11 @@ export const sitemapBlocks: SitemapBlock[] = [
                 title: "Get in Touch",
                 links: [
                     {
-                        label: CONTACT.educationEmail,
-                        path: `mailto:${CONTACT.educationEmail}`,
+                        label: CONTACT.supportEmail,
+                        path: `mailto:${CONTACT.supportEmail}`,
                         external: true,
                     },
                     { label: "Contact", path: "/contact" },
-                ],
-            },
-            {
-                title: "Follow",
-                links: [
-                    {
-                        label: "Instagram",
-                        path: "https://www.instagram.com/cyberlabsindia",
-                        external: true,
-                    },
-                    {
-                        label: "Facebook",
-                        path: "https://www.facebook.com/profile.php?id=61587196465882",
-                        external: true,
-                    },
-                    {
-                        label: "YouTube",
-                        path: "https://www.youtube.com/@cyberlabsindiabycyveritas-y7h",
-                        external: true,
-                    },
-                    {
-                        label: "LinkedIn",
-                        path: "https://www.linkedin.com/company/cyberlabs-india/",
-                        external: true,
-                    },
-                    { label: "WhatsApp", path: "https://wa.me/971504602632", external: true },
                 ],
             },
         ],

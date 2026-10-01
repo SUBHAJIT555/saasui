@@ -2,6 +2,7 @@
 
 import { CONTACT } from "@/config/constants/contactInfo";
 import { LegalList, LegalPage, LegalSection } from "@/components/features/legal/legalPageShared";
+import heroScene from "@/assets/img/HeroImage/RefundSupportHero.webp";
 
 const RefundPolicy = () => {
   return (
@@ -11,6 +12,7 @@ const RefundPolicy = () => {
       highlight="cancellations"
       summary="How a payment for a business service can be cancelled, and when an amount already paid for completed work stays paid."
       currentPath="/refund-and-cancellation"
+      image={heroScene}
     >
       <LegalSection number="01" title="What the payment is for">
         <p>

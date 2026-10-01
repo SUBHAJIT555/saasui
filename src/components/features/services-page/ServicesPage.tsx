@@ -21,6 +21,7 @@ import projects from "@/assets/img/Home/undraw/project-flow_ghph.svg";
 import billing from "@/assets/img/Home/undraw/digital-invoice_nx9a.svg";
 import customers from "@/assets/img/Home/undraw/work-emails_3qkc.svg";
 import faqImage from "@/assets/img/Home/undraw/status-page_46km.svg";
+import heroScene from "@/assets/img/HeroImage/ServicesHero.webp";
 
 const revealVariants = {
   visible: (i: number) => ({
@@ -38,9 +39,6 @@ const revealVariants = {
     opacity: 0,
   },
 };
-
-const HERO_SCENE =
-  "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=2400&q=80";
 
 const illustrations: Record<Service["slug"], string> = {
   "business-consultancy": consultancy,
@@ -115,7 +113,7 @@ function ServicesHero() {
           maskImage: "linear-gradient(to bottom, #000 0%, transparent 50%)",
         }}
       >
-        <img src={HERO_SCENE} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+        <img src={assetSrc(heroScene)} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-content flex-col items-center px-4 text-center sm:px-6 md:px-8">

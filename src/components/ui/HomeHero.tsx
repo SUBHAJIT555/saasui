@@ -4,6 +4,8 @@ import { useNavigate } from "@/lib/react-router";
 import { TimelineContent } from "@/components/ui/timeline-animation";
 import { GgwButton } from "@/components/ui/ggw-button";
 import { siteRoutes } from "@/config/routes";
+import { assetSrc } from "@/lib/utils";
+import heroScene from "@/assets/img/HeroImage/HomeHero.webp";
 
 const revealVariants = {
   visible: (i: number) => ({
@@ -22,9 +24,6 @@ const revealVariants = {
   },
 };
 
-const HERO_SCENE =
-  "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=2400&q=80";
-
 const HomeHero = () => {
   const navigate = useNavigate();
   const timelineRef = useRef<HTMLDivElement>(null);
@@ -38,7 +37,7 @@ const HomeHero = () => {
           maskImage: "linear-gradient(to bottom, #000 0%, transparent 50%)",
         }}
       >
-        <img src={HERO_SCENE} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
+        <img src={assetSrc(heroScene)} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
       </div>
 
       <div className="relative z-10 mx-auto flex max-w-content flex-col items-center px-4 text-center sm:px-6 md:px-8">

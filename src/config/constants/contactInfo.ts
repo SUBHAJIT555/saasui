@@ -4,23 +4,20 @@
  */
 
 export const CONTACT = {
-  /** Registered legal entity name */
-  registeredEntity: "Cyveritas Technologies LLP",
+  /** Registered legal entity name, as it appears on payment records */
+  registeredEntity: "TANIKSHA ENTERPRISES",
 
-  /** India office address (display lines) */
+  /** Registered office address (display lines) */
   officeAddressIndia: [
-    "Office No. 702 & 705, VB Capital",
-    "Aundh, Haveli, Pune – 411007",
-    "Maharashtra, India",
+    "Shop No. C-A12, Shudhanshu Chember",
+    "Near Railway Station, Kalyan West",
+    "Kalyan, Thane – 421301, Maharashtra, India",
   ],
 
-  /** Full India office address as single string for mail/maps */
+  /** Full registered address as single string for mail/maps */
   officeAddressIndiaFull:
-    "Office No. 702 & 705, VB Capital, Aundh, Haveli, Pune – 411007, Maharashtra, India",
+    "Shop No. C-A12, Shudhanshu Chember, Near Railway Station, Kalyan West, Kalyan, Thane – 421301, Maharashtra, India",
 
-  /** Course / education related queries */
-  educationEmail: "education@cyberlabs-india.com",
-
-  /** General support */
-  supportEmail: "education@cyberlabs-india.com",
+  /** General enquiries and support */
+  supportEmail: "info@prime-hive.com",
 } as const;

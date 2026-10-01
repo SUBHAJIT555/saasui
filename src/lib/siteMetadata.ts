@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
-export const SITE_NAME = "CYBERLABS INDIA";
+export const SITE_NAME = "Prime Hive";
 export const DEFAULT_DESCRIPTION =
-  "Israeli-led cyber defense training in India. Simulation-driven programs taught by real operators.";
-export const SITE_AUTHOR = "Subhajit Dhali";
+  "Business support services: consultancy, administration, documentation, project coordination, billing, and customer communication.";
+export const SITE_AUTHOR = "TANIKSHA ENTERPRISES";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://cyberlabsindia.com";
+  "https://prime-hive.com";
 
 export function getSiteUrl(): string {
   return SITE_URL;
@@ -58,7 +58,7 @@ export function createPageMetadata(
 export const rootMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} | Israeli-Led Cyber Defense Training`,
+    default: `${SITE_NAME} | Business Support Services`,
     template: `%s | ${SITE_NAME}`,
   },
   description: DEFAULT_DESCRIPTION,

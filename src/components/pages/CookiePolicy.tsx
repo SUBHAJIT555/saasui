@@ -2,6 +2,7 @@
 
 import { Link } from "@/lib/react-router";
 import { LegalList, LegalPage, LegalSection } from "@/components/features/legal/legalPageShared";
+import heroScene from "@/assets/img/HeroImage/CookiePolicyHero.webp";
 
 const linkClass = "text-brand-accent hover:underline";
 
@@ -13,6 +14,7 @@ const CookiePolicy = () => {
       highlight="stores"
       summary="This website does not use advertising or analytics cookies. A checkout draft is stored in your browser so you can return to it."
       currentPath="/cookie-policy"
+      image={heroScene}
     >
       <LegalSection number="01" title="Cookies">
         <p>

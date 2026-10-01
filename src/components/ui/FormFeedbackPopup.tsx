@@ -5,7 +5,7 @@ import { IoClose } from "react-icons/io5";
 import type { ReactNode } from "react";
 import Portal from "@/components/ui/Portal";
 import { ShinyButton, type ShinyButtonVariant } from "@/components/ui/shiny-button";
-import { crosshatchBgStyle } from "@/config/constants/bootcampStyles";
+import { crosshatchBgStyle } from "@/config/constants/surfaceStyles";
 
 const POPUP_TRANSITION = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const };
 const ICON_SPRING = {

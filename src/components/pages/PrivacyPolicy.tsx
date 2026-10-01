@@ -3,6 +3,7 @@
 import { Link } from "@/lib/react-router";
 import { CONTACT } from "@/config/constants/contactInfo";
 import { LegalList, LegalPage, LegalSection } from "@/components/features/legal/legalPageShared";
+import heroScene from "@/assets/img/HeroImage/PrivacyPolicyHero.webp";
 
 const linkClass = "text-brand-accent hover:underline";
 
@@ -12,8 +13,9 @@ const PrivacyPolicy = () => {
       label="Privacy"
       title="How we handle"
       highlight="your details"
-      summary="What Cyveritas Technologies LLP collects when you write, subscribe, or pay for a service, and how that information is used."
+      summary={`What ${CONTACT.registeredEntity} collects when you write, subscribe, or pay for a service, and how that information is used.`}
       currentPath="/privacy-policy"
+      image={heroScene}
     >
       <LegalSection number="01" title="Who this covers">
         <p>

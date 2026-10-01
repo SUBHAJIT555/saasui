@@ -2,8 +2,9 @@ import { Link } from "@/lib/react-router";
 import { useForm, type FieldValues } from "react-hook-form";
 import { useRef, type BaseSyntheticEvent, type ReactNode } from "react";
 import { FaHeart } from "react-icons/fa";
-import footerlogo from "@/assets/img/logo/Cyberlabs-logo-03.svg";
-import { cn, assetSrc } from "@/lib/utils";
+import Logo from "@/components/common/Logo";
+import { cn } from "@/lib/utils";
+import { SITE_NAME } from "@/lib/siteMetadata";
 import { GgwButton } from "@/components/ui/ggw-button";
 import { FormSuccessPopup } from "@/components/ui/FormSuccessPopup";
 import { FormErrorPopup } from "@/components/ui/FormErrorPopup";
@@ -24,7 +25,7 @@ const legalLinks = [
     { label: "Privacy Policy", to: "/privacy-policy" },
     { label: "Cookie Policy", to: "/cookie-policy" },
     { label: "Refund & Cancellation Policy", to: "/refund-and-cancellation" },
-    { label: "Support", to: `mailto:${CONTACT.educationEmail}`, external: true },
+    { label: "Support", to: `mailto:${CONTACT.supportEmail}`, external: true },
 ];
 
 
@@ -71,20 +72,26 @@ const Footer = () => {
                 <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-12">
                     <div>
                         <Link to="/" className="inline-flex items-center transition-opacity duration-200 hover:opacity-80">
-                            <img
-                                src={assetSrc(footerlogo)}
-                                alt="CYBERLABS INDIA Logo"
-                                className="h-12 w-auto"
-                            />
+                            <Logo className="h-10 w-auto" />
                         </Link>
                         <p className="mt-4 max-w-md text-copy text-muted">
                             Planning, administration, documents, projects, billing, and customer
                             communication. Each service is scoped work with a clear payment purpose.
                         </p>
+                        <div className="mt-5 text-sm text-muted">
+                            <p className="font-semibold text-ink">{CONTACT.registeredEntity}</p>
+                            <address className="mt-1 not-italic">
+                                {CONTACT.officeAddressIndia.map((line) => (
+                                    <span key={line} className="block">
+                                        {line}
+                                    </span>
+                                ))}
+                            </address>
+                        </div>
                         <ul className="mt-5 flex flex-col gap-2.5 text-sm text-muted">
                             <li>
-                                <a href={`mailto:${CONTACT.educationEmail}`} className="transition-colors hover:text-ink">
-                                    {CONTACT.educationEmail}
+                                <a href={`mailto:${CONTACT.supportEmail}`} className="transition-colors hover:text-ink">
+                                    {CONTACT.supportEmail}
                                 </a>
                             </li>
                             <li>
@@ -142,8 +149,8 @@ const Footer = () => {
                         <FooterColumn title="Get in Touch">
                             <ul className="flex flex-col gap-2.5">
                                 <li>
-                                    <FooterLink href={`mailto:${CONTACT.educationEmail}`}>
-                                        {CONTACT.educationEmail}
+                                    <FooterLink href={`mailto:${CONTACT.supportEmail}`}>
+                                        {CONTACT.supportEmail}
                                     </FooterLink>
                                 </li>
                                 <li>
@@ -158,9 +165,9 @@ const Footer = () => {
                     <p>
                         © {new Date().getFullYear()}{" "}
                         <Link to="/" className="text-ink hover:underline">
-                            CYBERLABS INDIA
+                            {SITE_NAME}
                         </Link>{" "}
-                        | All rights reserved. |{" "}
+                        | A unit of {CONTACT.registeredEntity} | All rights reserved. |{" "}
                         <Link to="/sitemap" className="text-ink hover:underline">
                             Sitemap
                         </Link>
