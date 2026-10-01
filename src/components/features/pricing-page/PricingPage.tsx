@@ -4,16 +4,9 @@ import { useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
-  ClipboardList,
-  FileText,
-  Headset,
-  Lightbulb,
   Pencil,
-  Receipt,
   ShoppingCart,
   Star,
-  Workflow,
-  type LucideIcon,
 } from "lucide-react";
 import { assetSrc, cn } from "@/lib/utils";
 import { Link } from "@/lib/react-router";
@@ -52,15 +45,6 @@ const revealVariants = {
     y: 16,
     opacity: 0,
   },
-};
-
-const serviceIcons: Record<string, LucideIcon> = {
-  "business-consultancy": Lightbulb,
-  "administrative-support": ClipboardList,
-  "documentation-services": FileText,
-  "project-operational-support": Workflow,
-  "billing-invoice-management": Receipt,
-  "customer-business-support": Headset,
 };
 
 const priceRules = [
@@ -169,12 +153,10 @@ function PricingHero() {
   );
 }
 
-function PricingCard({ service, index }: { service: PricedService; index: number }) {
+function PricingCard({ service }: { service: PricedService }) {
   const [choiceId, setChoiceId] = useState<string>(service.recommendedAmountId);
   const selected = pricingAmountOptions.find((option) => option.id === choiceId) ?? pricingAmountOptions[0];
   const isCustom = selected.amount === null;
-
-  const ServiceIcon = serviceIcons[service.slug] ?? Lightbulb;
 
   return (
     <article className="group relative flex h-full flex-col rounded-md border border-hairline bg-linear-to-b from-canvas to-brand-accent/5 p-2 transition-all duration-200  hover:shadow-[0_28px_56px_-34px_rgba(38,103,255,0.45)] sm:p-3">
@@ -306,8 +288,8 @@ function PriceList() {
           customVariants={landingRevealVariants}
           className="mt-4 max-w-3xl text-section text-ink"
         >
-          Choose an amount on any service,{" "}
-          <span className="bg-brand-accent px-1.5 text-on-primary">or enter your own at checkout</span>
+          Choose an amount on any service,or enter your own at checkout
+          
         </TimelineContent>
    
         <TimelineContent
@@ -330,7 +312,7 @@ function PriceList() {
               customVariants={landingRevealVariants}
               className="h-full"
             >
-              <PricingCard service={service} index={index} />
+              <PricingCard service={service} />
             </TimelineContent>
           ))}
         </div>
