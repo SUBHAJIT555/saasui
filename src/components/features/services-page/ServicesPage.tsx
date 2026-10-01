@@ -124,9 +124,10 @@ function ServicesHero() {
           customVariants={revealVariants}
           className="max-w-[22ch] text-balance text-hero text-ink md:max-w-[28ch]"
         >
-          Six services, each with a{" "}
-          <span className="bg-brand-accent px-1.5 text-on-primary">clear purpose</span>
+          Find the service that fits{" "}
+          <span className="bg-brand-accent px-1.5 text-on-primary">your exact need</span>
         </TimelineContent>
+        
         <TimelineContent
           as="p"
           animationNum={1}
@@ -217,9 +218,9 @@ function ServicesOverview() {
                   <span className="min-w-0">
                     <span className="block text-title-sm font-semibold text-ink">{service.name}</span>
                     <span className="mt-2 block text-sm leading-relaxed text-muted">{service.summary}</span>
-                    <span className="mt-3 block text-caption font-semibold uppercase tracking-[0.14em] text-brand-accent">
+                    {/* <span className="mt-3 block text-caption font-semibold uppercase tracking-[0.14em] text-brand-accent">
                       {service.paymentPurpose}
-                    </span>
+                    </span> */}
                   </span>
                 </div>
               </Link>
