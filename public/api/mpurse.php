@@ -55,8 +55,8 @@ if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
     exit;
 }
 
-loadEnvFiles();
 require_once __DIR__ . '/mailer.php';
+loadEnvFiles();
 
 $inputData = array();
 $rawInput = file_get_contents('php://input');
@@ -92,41 +92,7 @@ if ($action === 'create_session') {
 
 function loadEnvFiles()
 {
-    $candidates = array(
-        __DIR__ . DIRECTORY_SEPARATOR . '.env',
-        __DIR__ . DIRECTORY_SEPARATOR . 'mpurse.env',
-        dirname(__DIR__) . DIRECTORY_SEPARATOR . '.env',
-        dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . '.env',
-        dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'mpurse.env',
-    );
-    foreach ($candidates as $path) {
-        if (!is_file($path) || !is_readable($path)) {
-            continue;
-        }
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        if (!is_array($lines)) {
-            continue;
-        }
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
-                continue;
-            }
-            list($key, $value) = explode('=', $line, 2);
-            $key = trim($key);
-            $value = trim($value);
-            $value = trim($value, "\"'");
-            if ($key === '') {
-                continue;
-            }
-            if (!isset($_ENV[$key]) || $_ENV[$key] === '') {
-                $_ENV[$key] = $value;
-            }
-            if (getenv($key) === false || getenv($key) === '') {
-                putenv($key . '=' . $value);
-            }
-        }
-    }
+    ne_load_env();
 }
 
 function envVal($key, $default = '')
@@ -179,6 +145,32 @@ function dataDir()
         mkdir($dir, 0700, true);
     }
     return $dir;
+}
+
+/**
+ * Records why the gateway refused a call. Customers only ever see the generic
+ * message, so without this a live failure leaves no trace to debug from. The
+ * gateway's own reply is safe to keep here; our keys are never written.
+ * data/ is gitignored and blocked by .htaccess, so this stays private.
+ */
+function logGatewayFailure($context, $httpCode, $gateway, $raw = null)
+{
+    $reason = gatewayText($gateway, array('statusDescription', 'message', 'error', 'faultstring', 'errorcode'));
+    if ($reason === '') {
+        // Fall back to the whole reply, so an unrecognised shape still tells us something.
+        $body = is_string($raw) ? $raw : json_encode($raw, JSON_UNESCAPED_SLASHES);
+        if (is_string($body) && $body !== '' && $body !== 'null') {
+            $reason = substr(preg_replace('/\s+/', ' ', $body), 0, 400);
+        }
+    }
+    $line = sprintf(
+        "[%s] %s http=%s reason=%s\n",
+        date('c'),
+        (string) $context,
+        (string) $httpCode,
+        $reason !== '' ? $reason : '(gateway sent no reason)'
+    );
+    @file_put_contents(dataDir() . DIRECTORY_SEPARATOR . 'gateway-errors.log', $line, FILE_APPEND | LOCK_EX);
 }
 
 function orderPath($orderId)
@@ -702,8 +694,8 @@ function callUpiDirect($keys, $payload)
         'MPURSE_UPI_DIRECT_URL',
         'https://api-prod.mpurse.io/encrV2/mpurse/super-switch/v1/payments/upi/direct'
     );
-    list($httpCode, $result) = postEncrypted($url, $keys, $payload);
-    return array($httpCode, $result);
+    list($httpCode, $result, $raw) = postEncrypted($url, $keys, $payload);
+    return array($httpCode, $result, $raw);
 }
 
 function isUpiStarted($httpCode, $result)
@@ -782,14 +774,19 @@ function createUpiPayment()
 
     $preferred = preferredUpiMode();
     $fallback = $preferred === 'QR' ? 'INTENT' : 'QR';
-    list($httpCode, $result) = callUpiDirect($keys, upiDirectPayload($checkout, $preferred, $payeeVpa));
+    list($httpCode, $result, $raw) = callUpiDirect($keys, upiDirectPayload($checkout, $preferred, $payeeVpa));
     $mode = $preferred;
     if (!isUpiStarted($httpCode, $result)) {
+        logGatewayFailure('upi/direct ' . $preferred, $httpCode, $result, $raw);
         $checkout['order_id'] = 'AMA' . strtoupper(bin2hex(random_bytes(8)));
-        list($httpCode, $result) = callUpiDirect($keys, upiDirectPayload($checkout, $fallback, $payeeVpa));
+        list($httpCode, $result, $raw) = callUpiDirect($keys, upiDirectPayload($checkout, $fallback, $payeeVpa));
         $mode = $fallback;
         if (!isUpiStarted($httpCode, $result)) {
-            $message = gatewayText($result, array('statusDescription', 'message', 'error'));
+            logGatewayFailure('upi/direct ' . $fallback, $httpCode, $result, $raw);
+            $message = gatewayText($result, array('statusDescription', 'message', 'error', 'faultstring'));
+            if ($httpCode === 401 || stripos($message, 'apikey') !== false) {
+                fail(502, 'The payment gateway rejected the merchant API key. Nothing was charged.');
+            }
             fail(502, $message !== '' ? $message : 'Could not start UPI payment. Try again in a moment.');
         }
     }
@@ -854,7 +851,7 @@ function gatewayText($data, $keys)
         }
         return $value;
     }
-    foreach (array('data', 'result', 'payload', 'payment') as $nested) {
+    foreach (array('data', 'result', 'payload', 'payment', 'fault', 'detail') as $nested) {
         if (isset($data[$nested]) && is_array($data[$nested])) {
             $found = gatewayText($data[$nested], $keys);
             if ($found !== '') {
@@ -1156,8 +1153,8 @@ function kvRow($label, $value, $multiline = false)
 function wrapEmail($subject, $mainContent, $toEmail)
 {
     $brandName = envVal('MAIL_FROM_NAME', 'TANIKSHA ENTERPRISES');
-    $tagline = 'Intelligent agents, tools, and premium ad infrastructure.';
-    $brandColor = '#e04300';
+    $tagline = 'Business support services by TANIKSHA ENTERPRISES.';
+    $brandColor = '#2667ff';
     return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>' . clean($subject) . '</title></head>
 <body style="margin:0;padding:0;background:#f9fafb;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -1187,7 +1184,7 @@ function sendOrderPaidEmail($order, $gateway)
     $brandName = envVal('MAIL_FROM_NAME', 'TANIKSHA ENTERPRISES');
     $toEmail = envVal('ORDER_NOTIFY_EMAIL', 'info@prime-hive.com');
     $border = '#e5e7eb';
-    $brandColor = '#e04300';
+    $brandColor = '#2667ff';
     $billing = isset($order['billing']) && is_array($order['billing']) ? $order['billing'] : array();
     $cart = isset($order['cart']) && is_array($order['cart']) ? $order['cart'] : array();
     $name = trim((isset($billing['first_name']) ? $billing['first_name'] : '') . ' ' . (isset($billing['last_name']) ? $billing['last_name'] : ''));
@@ -1252,7 +1249,7 @@ function sendOrderPaidEmail($order, $gateway)
           <tr><td style="padding:10px;">' . $cartHtml . '</td></tr>
         </table></td></tr>';
 
-    $subject = 'Paid order - TANIKSHA ENTERPRISES - ' . $orderId;
+    $subject = 'Paid order - ' . $brandName . ' - ' . $orderId;
     $html = wrapEmail($subject, $mainContent, $toEmail);
     $alt .= "Billing: {$name}\nEmail: {$email}\nAmount: {$amount}\n";
 
@@ -1286,14 +1283,15 @@ function sendOrderPaidEmail($order, $gateway)
 
 function sendBarePaidEmail($orderId, $gateway)
 {
+    $brandName = envVal('MAIL_FROM_NAME', 'TANIKSHA ENTERPRISES');
     $toEmail = envVal('ORDER_NOTIFY_EMAIL', 'info@prime-hive.com');
     $amount = isset($gateway['amount']) ? (string) $gateway['amount'] : '';
     $txnId = isset($gateway['txn_id']) ? (string) $gateway['txn_id'] : '';
-    $subject = 'Paid order - TANIKSHA ENTERPRISES - ' . $orderId;
+    $subject = 'Paid order - ' . $brandName . ' - ' . $orderId;
     $main = '<tr><td style="padding:0 24px 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333;">'
         . kvRow('Order ID', $orderId)
         . kvRow('Amount', $amount)
         . kvRow('Txn ID', $txnId)
         . '</td></tr>';
-    deliverMail($toEmail, 'TANIKSHA ENTERPRISES', $subject, wrapEmail($subject, $main, $toEmail), $subject);
+    deliverMail($toEmail, $brandName, $subject, wrapEmail($subject, $main, $toEmail), $subject);
 }

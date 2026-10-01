@@ -29,5 +29,9 @@ dist-ssr
 *.zip
 
 .env
+.env.*
+!.env.example
+mpurse.env
 public/api/data/*.json
+public/api/data/*.log
 out

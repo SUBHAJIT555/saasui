@@ -1,11 +1,12 @@
-<IfModule mod_authz_core.c>
-  <FilesMatch "^(\.env|mpurse\.env|.*\.json)$">
+# Secrets and the order store live beside mpurse.php, so they must never be
+# fetchable. Repeated here rather than relying on the parent .htaccess, because
+# this folder is sometimes uploaded on its own.
+<FilesMatch "^(\.env.*|mpurse\.env|.*\.json|.*\.log)$">
+  <IfModule mod_authz_core.c>
     Require all denied
-  </FilesMatch>
-</IfModule>
-<IfModule !mod_authz_core.c>
-  <FilesMatch "^(\.env|mpurse\.env|.*\.json)$">
+  </IfModule>
+  <IfModule !mod_authz_core.c>
     Order allow,deny
     Deny from all
-  </FilesMatch>
-</IfModule>
+  </IfModule>
+</FilesMatch>

@@ -118,6 +118,11 @@ export function readCheckoutRequest(): CheckoutRequest | null {
     const parsed = JSON.parse(raw) as CheckoutRequest;
     if (!getService(parsed.serviceSlug)) return null;
     if (!Number.isFinite(parsed.amount) || parsed.amount <= 0) return null;
+    // A request saved by an older build can be missing fields the payment step
+    // reads, which would otherwise surface as an opaque runtime error. Treating
+    // it as absent sends the customer back to checkout instead.
+    const required = ["name", "message", "contactType", "contactDetails", "amountLabel"] as const;
+    if (required.some((key) => typeof parsed[key] !== "string")) return null;
     return parsed;
   } catch {
     return null;
@@ -169,8 +174,8 @@ export function preferredUpiMode() {
     : "QR";
 }
 
-export function splitName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+export function splitName(name: string | null | undefined) {
+  const parts = String(name ?? "").trim().split(/\s+/).filter(Boolean);
   return {
     firstName: parts[0] ?? "",
     lastName: parts.slice(1).join(" ") || "Customer",
@@ -200,8 +205,8 @@ export type MpurseCreateResult = {
 export async function startMpursePayment(request: CheckoutRequest) {
   const names = splitName(request.name);
   const notes = [
-    request.message.trim(),
-    `Contact: ${request.contactType} ${request.contactDetails}`.trim(),
+    String(request.message ?? "").trim(),
+    `Contact: ${request.contactType ?? ""} ${request.contactDetails ?? ""}`.trim(),
   ]
     .filter(Boolean)
     .join("\n\n");

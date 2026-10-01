@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "php:api": "C:/xampp/php/php.exe -S 127.0.0.1:8093 -t public/api",
+    "php:api": "C:/xampp/php/php.exe -S 127.0.0.1:8088 -t public",
     "postinstall": "npx patch-package"
   },
   "dependencies": {

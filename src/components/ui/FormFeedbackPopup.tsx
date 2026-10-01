@@ -1,29 +1,36 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { IoClose } from "react-icons/io5";
-import type { ReactNode } from "react";
+import { Check, TriangleAlert, X } from "lucide-react";
+import { useEffect, useRef, type ReactNode } from "react";
 import Portal from "@/components/ui/Portal";
-import { ShinyButton, type ShinyButtonVariant } from "@/components/ui/shiny-button";
-import { crosshatchBgStyle } from "@/config/constants/surfaceStyles";
+import { GgwButton } from "@/components/ui/ggw-button";
+import { useLenis } from "@/hooks/useLenis";
+import { cn } from "@/lib/utils";
 
-const POPUP_TRANSITION = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const };
-const ICON_SPRING = {
-  delay: 0.12,
-  type: "spring" as const,
-  stiffness: 260,
-  damping: 18,
+const PANEL_TRANSITION = { duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] as const };
+const ICON_SPRING = { delay: 0.08, type: "spring" as const, stiffness: 280, damping: 20 };
+
+export type FeedbackTone = "success" | "error";
+
+const toneStyles: Record<FeedbackTone, { tile: string; icon: ReactNode }> = {
+  success: {
+    tile: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+    icon: <Check className="h-6 w-6" strokeWidth={2.75} />,
+  },
+  error: {
+    tile: "bg-amber-50 text-amber-600 ring-amber-100",
+    icon: <TriangleAlert className="h-5.5 w-5.5" strokeWidth={2.25} />,
+  },
 };
 
 type FormFeedbackPopupProps = {
   open: boolean;
   onClose: () => void;
+  tone: FeedbackTone;
   title: string;
   message: string;
   buttonLabel: string;
-  buttonVariant?: ShinyButtonVariant;
-  icon: ReactNode;
-  iconWrapperClassName: string;
   ariaLabel: string;
   role?: "dialog" | "alertdialog";
   titleId?: string;
@@ -33,17 +40,39 @@ type FormFeedbackPopupProps = {
 export function FormFeedbackPopup({
   open,
   onClose,
+  tone,
   title,
   message,
   buttonLabel,
-  buttonVariant = "default",
-  icon,
-  iconWrapperClassName,
   ariaLabel,
   role = "dialog",
   titleId = "form-feedback-title",
   children,
 }: FormFeedbackPopupProps) {
+  const lenis = useLenis();
+  const actionRef = useRef<HTMLButtonElement>(null);
+
+  // Lenis owns scrolling, so pausing it is what actually freezes the page behind
+  // the dialog; overflow:hidden on body alone does nothing here.
+  useEffect(() => {
+    if (!open) return;
+
+    lenis?.stop();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const focusTimer = window.setTimeout(() => actionRef.current?.focus(), 120);
+
+    return () => {
+      lenis?.start();
+      window.removeEventListener("keydown", onKeyDown);
+      window.clearTimeout(focusTimer);
+    };
+  }, [open, onClose, lenis]);
+
+  const { tile, icon } = toneStyles[tone];
+
   return (
     <Portal>
       <AnimatePresence>
@@ -51,12 +80,13 @@ export function FormFeedbackPopup({
           <>
             <motion.button
               type="button"
+              tabIndex={-1}
               aria-label={ariaLabel}
-              className="fixed inset-0 z-10060 cursor-default border-0 bg-background/50 backdrop-blur-sm"
+              className="fixed inset-0 z-10060 cursor-default border-0 bg-ink/40 backdrop-blur-[3px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
               onClick={onClose}
             />
             <div className="pointer-events-none fixed inset-0 z-10061 flex items-center justify-center p-4">
@@ -64,81 +94,84 @@ export function FormFeedbackPopup({
                 role={role}
                 aria-modal="true"
                 aria-labelledby={titleId}
-                className="pointer-events-auto relative w-full max-w-md overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl ring ring-neutral-200 ring-offset-4 md:ring-offset-8"
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                className={cn(
+                  "pointer-events-auto relative w-full max-w-100 overflow-hidden",
+                  "rounded-3xl border border-hairline bg-canvas",
+                  "shadow-[0_32px_64px_-28px_rgba(17,17,17,0.3)]",
+                )}
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                transition={POPUP_TRANSITION}
-                onClick={(e) => e.stopPropagation()}
+                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                transition={PANEL_TRANSITION}
+                onClick={(event) => event.stopPropagation()}
               >
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={crosshatchBgStyle}
-                  aria-hidden
-                />
-                <div className="relative z-10 p-6 sm:p-8">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="absolute right-4 top-4 rounded-lg p-1.5 text-text-primary/70 transition-colors hover:bg-neutral-100 hover:text-text-primary"
-                    aria-label="Close"
-                  >
-                    <IoClose className="h-5 w-5" />
-                  </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close"
+                  className="absolute right-3.5 top-3.5 flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors duration-200 hover:bg-surface-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/30"
+                >
+                  <X className="h-4 w-4" strokeWidth={2.25} />
+                </button>
 
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
+                <div className="px-6 pb-6 pt-8 text-center sm:px-7 sm:pb-7">
+                  <motion.span
+                    aria-hidden
+                    initial={{ scale: 0.6, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={ICON_SPRING}
-                    className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full border ${iconWrapperClassName}`}
+                    className={cn(
+                      "mx-auto flex h-13 w-13 items-center justify-center rounded-2xl ring-1",
+                      tile,
+                    )}
                   >
                     {icon}
-                  </motion.div>
+                  </motion.span>
 
                   <motion.h2
                     id={titleId}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.3 }}
-                    className="mb-2 text-center text-xl font-inter-display font-semibold tracking-tight text-text-primary sm:text-2xl"
+                    transition={{ delay: 0.14, duration: 0.26 }}
+                    className="mt-5 text-section text-ink"
                   >
                     {title}
                   </motion.h2>
 
                   <motion.p
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.28, duration: 0.3 }}
-                    className="text-center text-sm font-inter-display leading-relaxed text-text-primary/80 sm:text-base"
+                    transition={{ delay: 0.2, duration: 0.26 }}
+                    className="mt-2 text-copy text-muted"
                   >
                     {message}
                   </motion.p>
 
-                  {children && (
+                  {children ? (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.34, duration: 0.3 }}
-                      className="mt-6 border-t border-dashed border-neutral-200 pt-6"
+                      transition={{ delay: 0.26, duration: 0.26 }}
+                      className="mt-5 rounded-2xl bg-surface-soft p-4 text-left"
                     >
                       {children}
                     </motion.div>
-                  )}
+                  ) : null}
 
                   <motion.div
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: children ? 0.4 : 0.36, duration: 0.3 }}
-                    className="mt-6"
+                    transition={{ delay: children ? 0.32 : 0.26, duration: 0.26 }}
                   >
-                    <ShinyButton
+                    <GgwButton
+                      ref={actionRef}
                       type="button"
-                      variant={buttonVariant}
+                      variant="accent"
                       onClick={onClose}
-                      className="w-full rounded-lg! font-inter-display! text-base font-medium shadow-lg! active:scale-95!"
+                      className="mt-6 w-full"
                     >
                       {buttonLabel}
-                    </ShinyButton>
+                    </GgwButton>
                   </motion.div>
                 </div>
               </motion.div>

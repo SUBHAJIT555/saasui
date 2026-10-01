@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode, Ref } from "react";
 import { Link } from "@/lib/react-router";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,8 @@ type GgwButtonProps = {
   href?: string;
   children: ReactNode;
   className?: string;
+  /** Only applies to the button form; ignored when href renders a link. */
+  ref?: Ref<HTMLButtonElement>;
 } & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "children">;
 
 export function GgwButton({
@@ -51,6 +53,7 @@ export function GgwButton({
   children,
   className,
   type = "button",
+  ref,
   ...rest
 }: GgwButtonProps) {
   const classes = cn(baseClass, variantClass[variant], className);
@@ -71,7 +74,7 @@ export function GgwButton({
   }
 
   return (
-    <button type={type} className={classes} {...rest}>
+    <button ref={ref} type={type} className={classes} {...rest}>
       {children}
     </button>
   );

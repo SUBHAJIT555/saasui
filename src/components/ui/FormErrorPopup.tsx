@@ -1,6 +1,5 @@
 "use client";
 
-import { FaExclamationCircle } from "react-icons/fa";
 import { FormFeedbackPopup } from "@/components/ui/FormFeedbackPopup";
 
 type FormErrorPopupProps = {
@@ -14,23 +13,21 @@ type FormErrorPopupProps = {
 export function FormErrorPopup({
   open,
   onClose,
-  title = "Unable to Send Request",
+  title = "Could not send",
   message,
-  buttonLabel = "Try Again",
+  buttonLabel = "Try again",
 }: FormErrorPopupProps) {
   return (
     <FormFeedbackPopup
       open={open}
       onClose={onClose}
+      tone="error"
       title={title}
       message={message}
       buttonLabel={buttonLabel}
-      buttonVariant="light"
       ariaLabel="Close error message"
       role="alertdialog"
       titleId="form-error-title"
-      icon={<FaExclamationCircle className="h-9 w-9 text-amber-600" />}
-      iconWrapperClassName="border-amber-200 bg-amber-50"
     />
   );
 }

@@ -50,14 +50,14 @@ const HomeOverview = () => {
             animationNum={3}
             timelineRef={timelineRef}
             customVariants={landingRevealVariants}
-            className="text-copy font-medium text-brand-accent"
+            className="text-[17px] font-medium leading-relaxed text-brand-accent"
           >
             Six services cover planning, records, documents, projects, invoices, and customer communication.
           </TimelineContent>
           <TimelineContent as="div" animationNum={4} timelineRef={timelineRef} customVariants={landingRevealVariants} className="mt-6">
             <MagicText
               text="Each service is a defined piece of work: business planning, day-to-day administration, document preparation, project coordination, invoice tracking, and customer communication. The payment purpose matches the work, from a consultation fee to a contracted support fee."
-              className="text-copy leading-relaxed text-body"
+              className="text-[17px] leading-relaxed text-body"
               renderWord={styleServiceWords}
             />
           </TimelineContent>

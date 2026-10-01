@@ -35,9 +35,12 @@ const Word: React.FC<WordProps> = ({ children, progress, range, renderWord, inde
 export const MagicText: React.FC<MagicTextProps> = ({ text, className = "", renderWord }) => {
   const container = useRef<HTMLParagraphElement>(null);
 
+  // Reveal as the paragraph enters, finishing the moment it is fully on screen.
+  // Anchoring the end to the paragraph's own bottom edge keeps this independent of
+  // how tall the text wraps, so the closing words never stay faded while readable.
   const { scrollYProgress } = useScroll({
     target: container,
-    offset: ["start 0.9", "start 0.25"],
+    offset: ["start end", "end end"],
   });
 
   const words = text.split(" ");

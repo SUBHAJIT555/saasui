@@ -1,7 +1,6 @@
 import { Link } from "@/lib/react-router";
 import { useForm, type FieldValues } from "react-hook-form";
 import { useRef, type BaseSyntheticEvent, type ReactNode } from "react";
-import { FaHeart } from "react-icons/fa";
 import Logo from "@/components/common/Logo";
 import { cn } from "@/lib/utils";
 import { SITE_NAME } from "@/lib/siteMetadata";
@@ -161,7 +160,7 @@ const Footer = () => {
                     </div>
                 </div>
 
-                <div className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-dashed border-hairline pt-5 text-center text-caption text-muted sm:flex-row sm:text-left">
+                <div className="mt-8 border-t border-dashed border-hairline pt-5 text-center text-caption text-muted">
                     <p>
                         © {new Date().getFullYear()}{" "}
                         <Link to="/" className="text-ink hover:underline">
@@ -171,21 +170,6 @@ const Footer = () => {
                         <Link to="/sitemap" className="text-ink hover:underline">
                             Sitemap
                         </Link>
-                    </p>
-                    <p className="inline-flex items-center justify-center gap-1 md:justify-end">
-                        <span>Made with</span>
-                        <FaHeart className="h-3.5 w-3.5 shrink-0 text-brand-accent" aria-hidden />
-                        <span>
-                            by{" "}
-                            <a
-                                href="https://subhajit-dhali.vercel.app/"
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-ink hover:underline"
-                            >
-                                Subhajit
-                            </a>
-                        </span>
                     </p>
                 </div>
             </div>

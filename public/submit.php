@@ -88,8 +88,11 @@ if (strpos($contentType, 'application/json') !== false) {
 }
 
 // --- Autoload ---
-$autoloadPath = __DIR__ . '/vendor/autoload.php';
-if (!file_exists($autoloadPath)) {
+// mailer.php owns both the .env reader and the PHPMailer lookup, so this endpoint
+// and mpurse.php always agree on where credentials and the vendor folder live.
+require_once __DIR__ . '/api/mailer.php';
+$autoloadPath = ne_find_autoload();
+if ($autoloadPath === null) {
     sendJsonError('Server configuration error: PHPMailer not found.', 500);
 }
 require $autoloadPath;
@@ -136,14 +139,14 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 $name = $formType === 'contact' ? v('fullName') : v('name');
 $phone = v('mobileNumber');
 
-// --- SMTP CONFIG (set these in the server environment, never in this file) ---
-$smtpHost = getenv('SMTP_HOST') ?: '';
-$smtpUser = getenv('SMTP_USER') ?: 'info@prime-hive.com';
-$smtpPass = getenv('SMTP_PASS') ?: '';
-$smtpPort = (int) (getenv('SMTP_PORT') ?: 465);
-$smtpSecure = strtolower(getenv('SMTP_SECURE') ?: 'smtps');
+// --- SMTP CONFIG (from public/api/.env, never hard-coded in this file) ---
+$smtpHost = ne_env('SMTP_HOST');
+$smtpUser = ne_env('SMTP_USER', 'info@prime-hive.com');
+$smtpPass = ne_env('SMTP_PASS');
+$smtpPort = (int) ne_env('SMTP_PORT', '465');
+$smtpSecure = strtolower(ne_env('SMTP_SECURE', 'smtps'));
 
-$notifyEmail = getenv('ORDER_NOTIFY_EMAIL') ?: 'info@prime-hive.com';
+$notifyEmail = ne_env('ORDER_NOTIFY_EMAIL', 'info@prime-hive.com');
 $toAddresses = [[$notifyEmail, 'Prime Hive']];
 $fromEmail = $smtpUser;
 $fromName = 'Prime Hive';

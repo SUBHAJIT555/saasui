@@ -1,0 +1,48 @@
+# Static export served by Apache / LiteSpeed from public_html.
+# Next's export writes both pay.html and a pay/ directory, so a directory must
+# never win over the matching .html file, and directory listings stay off.
+
+Options -Indexes
+
+<IfModule mod_mime.c>
+  AddType application/json .json
+  AddType image/webp .webp
+  AddType image/svg+xml .svg
+</IfModule>
+
+# Never serve env files or the order store, wherever they end up.
+<FilesMatch "^(\.env.*|mpurse\.env)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # PHP endpoints are served directly; never rewrite them.
+  RewriteRule ^api/ - [L]
+  RewriteRule ^submit\.php$ - [L]
+
+  # A trailing-slash URL whose .html twin exists resolves to that file. This is
+  # what keeps /pay/ and /checkout/ from rendering as a directory.
+  RewriteCond %{REQUEST_URI} ^/(.+)/$
+  RewriteCond %{DOCUMENT_ROOT}/%1.html -f
+  RewriteRule ^(.+)/$ /$1.html [L]
+
+  # Same for the no-slash form.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+)$ /$1.html [L]
+
+  # Directory requests fall back to the index Next wrote inside them.
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_FILENAME}/index.html -f
+  RewriteRule ^(.*)$ /$1/index.html [L]
+</IfModule>
+
+ErrorDocument 404 /404.html

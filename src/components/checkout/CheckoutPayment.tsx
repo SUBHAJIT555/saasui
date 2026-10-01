@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Mail, TriangleAlert } from "lucide-react";
 import { Link, useNavigate } from "@/lib/react-router";
 import { GgwButton } from "@/components/ui/ggw-button";
+import { CONTACT } from "@/config/constants/contactInfo";
 import { checkoutPath } from "@/config/data/services";
 import {
   getPaymentMethod,
@@ -38,6 +40,16 @@ export function CheckoutPayment() {
 
   const method = useMemo(() => getPaymentMethod(methodId), [methodId]);
   const checkoutHref = request ? checkoutPath(request.serviceSlug) : "/checkout";
+
+  // A failed start leaves the customer stranded, so offer the office as a route
+  // through, with the details already filled in so nothing has to be retyped.
+  const helpHref = useMemo(() => {
+    const subject = `Payment could not start${request ? ` - ${request.serviceName}` : ""}`;
+    const body = request
+      ? `Service: ${request.serviceName}\nPayment purpose: ${request.paymentPurpose}\nAmount: ${request.amountLabel}\n\nThe UPI payment did not start. Please let me know how to continue.`
+      : "The UPI payment did not start. Please let me know how to continue.";
+    return `mailto:${CONTACT.supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }, [request]);
 
   async function onPay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,9 +169,24 @@ export function CheckoutPayment() {
               {submitting ? "Starting UPI…" : `Pay ${request.amountLabel} with UPI`}
             </GgwButton>
             {status ? (
-              <p className="mt-3 text-sm text-red-600" role="alert">
-                {status}
-              </p>
+              <div role="alert" className="mt-4 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <TriangleAlert className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-600" strokeWidth={2.25} />
+                <div>
+                  <p className="text-copy font-semibold text-ink">Payment could not start</p>
+                  <p className="mt-1 text-caption leading-relaxed text-body">{status}</p>
+                  <p className="mt-2 text-caption leading-relaxed text-muted">
+                    Nothing has been charged. You can try again, or send us the details and we will
+                    arrange it another way.
+                  </p>
+                  <a
+                    href={helpHref}
+                    className="mt-3 inline-flex items-center gap-1.5 text-caption font-semibold text-brand-accent hover:underline"
+                  >
+                    <Mail className="h-3.5 w-3.5" strokeWidth={2.25} />
+                    Email {CONTACT.supportEmail}
+                  </a>
+                </div>
+              </div>
             ) : null}
           </div>
           <p className="mt-4 text-sm">

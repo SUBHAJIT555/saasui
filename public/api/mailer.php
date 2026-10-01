@@ -1,8 +1,59 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * Shared .env reader. Hosting panels rarely expose real environment variables to
+ * PHP, so every endpoint has to read the file itself. Values already present in
+ * the real environment win, which keeps a server-level override possible.
+ */
+function ne_load_env(): void
+{
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+    $loaded = true;
+
+    $candidates = array(
+        __DIR__ . DIRECTORY_SEPARATOR . '.env',
+        __DIR__ . DIRECTORY_SEPARATOR . 'mpurse.env',
+        dirname(__DIR__) . DIRECTORY_SEPARATOR . '.env',
+        dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . '.env',
+        dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'mpurse.env',
+    );
+    foreach ($candidates as $path) {
+        if (!is_file($path) || !is_readable($path)) {
+            continue;
+        }
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!is_array($lines)) {
+            continue;
+        }
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
+                continue;
+            }
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim(trim($value), "\"'");
+            if ($key === '') {
+                continue;
+            }
+            if (!isset($_ENV[$key]) || $_ENV[$key] === '') {
+                $_ENV[$key] = $value;
+            }
+            if (getenv($key) === false || getenv($key) === '') {
+                putenv($key . '=' . $value);
+            }
+        }
+    }
+}
+
 function ne_env(string $key, string $default = ''): string
 {
+    ne_load_env();
+
     if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
         return (string) $_ENV[$key];
     }
